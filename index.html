@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Calculos Operador Logistik</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,7 +12,6 @@
   .app-title { font-size: 20px; font-weight: 700; color: #fff; text-align: center; margin-bottom: 0.25rem; }
   .app-sub { font-size: 12px; color: #6b75a0; text-align: center; margin-bottom: 1.75rem; }
   .field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; margin-bottom: 10px; }
-
   .city-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .city-wrap { position: relative; flex: 1.4; min-width: 0; }
   .city-input { width: 100%; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 12px; border: 1px solid #2d3558; border-radius: 10px; color: #fff; background: #1e2540; outline: none; }
@@ -19,51 +19,23 @@
   .city-input:focus { border-color: #4a5580; }
   .city-input.matched { border-color: #2a6048; color: #4caf82; }
   .city-input.no-match { border-color: #5a2020; color: #e05050; }
-
   .dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; z-index: 100; max-height: 180px; overflow-y: auto; }
   .dropdown-item { padding: 9px 12px; font-size: 13px; cursor: pointer; color: #fff; }
   .dropdown-item:hover, .dropdown-item.active { background: #2a3260; }
   .dropdown-item span { font-size: 11px; color: #6b75a0; margin-left: 6px; }
-
   .kilo-wrap { display: flex; align-items: center; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; flex: 1; min-width: 0; gap: 4px; }
   .kilo-wrap:focus-within { border-color: #4a5580; }
   .kilo-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
   .kilo-input::placeholder { color: #6b75a0; }
   .kilo-unit { font-size: 11px; color: #6b75a0; white-space: nowrap; flex-shrink: 0; }
-
   .remove-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #2d3558; background: #1a2040; color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s; }
   .remove-btn:hover { background: #2d1a1a; color: #e05050; border-color: #5a2020; }
-
-  /* Resultado por fila — tarjeta visible */
-  .row-result-card {
-    background: #1a2540;
-    border: 1px solid #2a3a5a;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-bottom: 10px;
-    display: none;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-  }
+  .row-result-card { background: #1a2540; border: 1px solid #2a3a5a; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; display: none; justify-content: space-between; align-items: center; gap: 8px; }
   .row-result-card.visible { display: flex; }
-  .row-result-formula {
-    font-size: 13px;
-    color: #8ab4d4;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .row-result-total {
-    font-size: 18px;
-    font-weight: 700;
-    color: #4caf82;
-    text-align: right;
-    white-space: nowrap;
-  }
-
+  .row-result-formula { font-size: 13px; color: #8ab4d4; white-space: nowrap; flex-shrink: 0; }
+  .row-result-total { font-size: 18px; font-weight: 700; color: #4caf82; text-align: right; white-space: nowrap; }
   .add-btn { width: 100%; padding: 9px; border-radius: 10px; border: 1px dashed #2d3558; background: transparent; color: #fff; cursor: pointer; font-size: 13px; font-family: 'Sora', sans-serif; margin-top: 4px; margin-bottom: 1.25rem; transition: all 0.12s; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .add-btn:hover { background: #1e2540; border-color: #4a5580; }
-
   .total-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 14px; }
   .total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2d3558; }
   .total-row:last-child { border-bottom: none; }
@@ -76,17 +48,14 @@
 <div class="card">
   <div class="app-title">Tarifas Operador Logistik</div>
   <div class="app-sub">Oscar Pérez — Valor por kilo</div>
-
   <div class="field-label">Ciudad y kilos</div>
   <div id="cityRows"></div>
-
   <button class="add-btn" onclick="addRow()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
       <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
     </svg>
     Agregar ciudad
   </button>
-
   <div class="total-block">
     <div class="total-row">
       <span class="total-label">Total kilos</span>
@@ -131,10 +100,9 @@ function addRow() {
   const id = rowCount;
   const container = document.createElement('div');
   container.id = 'container-' + id;
-
   container.innerHTML = `
     <div class="city-row" id="row-${id}">
-      <div class="city-wrap" id="cwrap-${id}">
+      <div class="city-wrap">
         <input type="text" class="city-input" id="city-${id}" placeholder="Ciudad..." autocomplete="off"
           oninput="onCityInput(${id})" onkeydown="onCityKey(event,${id})" onfocus="showDropdown(${id})" onblur="hideDropdown(${id})" />
         <div class="dropdown" id="dd-${id}" style="display:none"></div>
@@ -150,7 +118,6 @@ function addRow() {
       <span class="row-result-total" id="res-total-${id}"></span>
     </div>
   `;
-
   document.getElementById('cityRows').appendChild(container);
   document.getElementById('city-' + id).focus();
 }
@@ -172,7 +139,7 @@ function showDropdown(id, filter) {
   const matches = q.length === 0 ? ALL_CITIES : ALL_CITIES.filter(c => c.includes(q));
   if (!matches.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = matches.map((c, i) =>
-    `<div class="dropdown-item" id="ddi-${id}-${i}" onmousedown="selectCity(${id},'${c.replace(/'/g,"\\'")}')">
+    `<div class="dropdown-item${i === 0 ? ' active' : ''}" id="ddi-${id}-${i}" onmousedown="selectCity(${id},'${c.replace(/'/g,"\\'")}')">
       ${c} <span>$ ${fmtInt(TARIFAS[c])}/kg</span>
     </div>`
   ).join('');
@@ -189,9 +156,25 @@ function hideDropdown(id) {
 
 function onCityKey(e, id) {
   const dd = document.getElementById('dd-' + id);
+  const items = dd ? dd.querySelectorAll('.dropdown-item') : [];
+
+  if (e.key === 'Tab') {
+    // Si hay dropdown visible con items, seleccionar el activo (o el primero)
+    if (dd && dd.style.display !== 'none' && items.length > 0) {
+      e.preventDefault();
+      const activeIdx = ddActive[id] || 0;
+      const activeItem = items[activeIdx] || items[0];
+      const city = activeItem.textContent.trim().split('$')[0].trim();
+      selectCity(id, city);
+      // Mover foco al campo de kilos
+      document.getElementById('kg-' + id).focus();
+    }
+    return;
+  }
+
   if (dd.style.display === 'none') return;
-  const items = dd.querySelectorAll('.dropdown-item');
   if (!items.length) return;
+
   if (e.key === 'ArrowDown') {
     ddActive[id] = Math.min((ddActive[id] || 0) + 1, items.length - 1);
     items.forEach((el, i) => el.classList.toggle('active', i === ddActive[id]));
@@ -210,11 +193,12 @@ function onCityKey(e, id) {
 }
 
 function selectCity(id, city) {
-  document.getElementById('city-' + id).value = city;
-  document.getElementById('city-' + id).classList.remove('no-match');
-  document.getElementById('city-' + id).classList.add('matched');
-  document.getElementById('dd-' + id).style.display = 'none';
-  document.getElementById('kg-' + id).focus();
+  const cityEl = document.getElementById('city-' + id);
+  cityEl.value = city;
+  cityEl.classList.remove('no-match');
+  cityEl.classList.add('matched');
+  const dd = document.getElementById('dd-' + id);
+  if (dd) dd.style.display = 'none';
   recalc();
 }
 
@@ -233,11 +217,9 @@ function recalc() {
     const resFormula = document.getElementById('res-formula-' + id);
     const resTotal = document.getElementById('res-total-' + id);
     if (!cityEl || !kgEl) return;
-
     const city = cityEl.value.toUpperCase().trim();
     const kg = parseFloat(kgEl.value) || 0;
     const tarifa = TARIFAS[city] || null;
-
     if (tarifa && kg > 0) {
       const subtotal = tarifa * kg;
       totalKg += kg;
