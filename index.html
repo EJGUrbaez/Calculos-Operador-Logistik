@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: #0b0f1e; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; color: #fff; }
+  .card { background: #12172e; border-radius: 18px; padding: 2rem 1.75rem; width: 100%; max-width: 500px; height: fit-content; }
+  .app-title { font-size: 20px; font-weight: 700; color: #fff; text-align: center; margin-bottom: 0.25rem; }
+  .app-sub { font-size: 12px; color: #6b75a0; text-align: center; margin-bottom: 1.75rem; }
+  .field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; margin-bottom: 10px; }
+
+  .city-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .city-wrap { position: relative; flex: 1.4; min-width: 0; }
+  .city-input { width: 100%; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 12px; border: 1px solid #2d3558; border-radius: 10px; color: #fff; background: #1e2540; outline: none; }
+  .city-input::placeholder { color: #6b75a0; }
+  .city-input:focus { border-color: #4a5580; }
+  .city-input.matched { border-color: #2a6048; color: #4caf82; }
+  .city-input.no-match { border-color: #5a2020; color: #e05050; }
+
+  .dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; z-index: 100; max-height: 180px; overflow-y: auto; }
+  .dropdown-item { padding: 9px 12px; font-size: 13px; cursor: pointer; color: #fff; }
+  .dropdown-item:hover, .dropdown-item.active { background: #2a3260; }
+  .dropdown-item span { font-size: 11px; color: #6b75a0; margin-left: 6px; }
+
+  .kilo-wrap { display: flex; align-items: center; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; flex: 1; min-width: 0; gap: 4px; }
+  .kilo-wrap:focus-within { border-color: #4a5580; }
+  .kilo-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
+  .kilo-input::placeholder { color: #6b75a0; }
+  .kilo-unit { font-size: 11px; color: #6b75a0; white-space: nowrap; flex-shrink: 0; }
+
+  .remove-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #2d3558; background: #1a2040; color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s; }
+  .remove-btn:hover { background: #2d1a1a; color: #e05050; border-color: #5a2020; }
+
+  /* Resultado por fila — tarjeta visible */
+  .row-result-card {
+    background: #1a2540;
+    border: 1px solid #2a3a5a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .row-result-card.visible { display: flex; }
+  .row-result-formula {
+    font-size: 13px;
+    color: #8ab4d4;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .row-result-total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4caf82;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .add-btn { width: 100%; padding: 9px; border-radius: 10px; border: 1px dashed #2d3558; background: transparent; color: #fff; cursor: pointer; font-size: 13px; font-family: 'Sora', sans-serif; margin-top: 4px; margin-bottom: 1.25rem; transition: all 0.12s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-btn:hover { background: #1e2540; border-color: #4a5580; }
+
+  .total-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 14px; }
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2d3558; }
+  .total-row:last-child { border-bottom: none; }
+  .total-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6b75a0; }
+  .total-value { font-size: 17px; font-weight: 700; color: #fff; }
+  .total-value.big { font-size: 26px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="app-title">Tarifas Operador Logistik</div>
+  <div class="app-sub">Oscar Pérez — Valor por kilo</div>
+
+  <div class="field-label">Ciudad y kilos</div>
+  <div id="cityRows"></div>
+
+  <button class="add-btn" onclick="addRow()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    Agregar ciudad
+  </button>
+
+  <div class="total-block">
+    <div class="total-row">
+      <span class="total-label">Total kilos</span>
+      <span class="total-value" id="totalKilos">0 kg</span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total a pagar</span>
+      <span class="total-value big" id="totalPagar">$ 0</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const TARIFAS = {
+  "ABREGO": 653, "AGUACHICA": 374, "AGUACHICA FRESCALECHE FACTORES Y MERCADEO": 800000,
+  "BARBOSA": 383, "BARICHARA": 571, "BARRANCABERMEJA": 366, "BUCARAMANGA": 200,
+  "CAPITANEJO": 686, "CARCASI": 800, "CATAGALLO": 904, "CHARALA": 560,
+  "CIMITARRA": 980, "CUCUTA": 405, "CURUMANI": 904, "EL CARMEN CHUCURI": 1020,
+  "EL PLAYON": 364, "EL ZULIA": 463, "FLORIDABLANCA": 245, "GAMARRA": 735,
+  "GIRON": 245, "GUACA": 613, "LA ESPERANZA NRTE SANTANDER": 369, "LANDAZURI": 956,
+  "LEBRIJA": 392, "LOS PATIOS": 417, "MALAGA": 600, "MOGOTES": 587,
+  "MONIQUIRA": 537, "OCAÑA": 417, "OIBA": 430, "PAILITAS": 904, "PAMPLONA": 400,
+  "PELAYA": 904, "PUENTE NACIONAL": 537, "PUERTO ARAUJO": 980, "PUERTO PARRA": 980,
+  "PUERTO SANTANDER": 973, "PUERTO WILCHES": 769, "RIO DE ORO": 445, "RIONEGRO": 404,
+  "SABANA DE TORRES": 700, "SAN ALBERTO": 352, "SAN GIL": 343, "SAN MARTIN": 400,
+  "SAN PABLO SUR DE BOLIVAR": 864, "SAN VICENTE CHUCURI": 1020,
+  "SANTA ROSA SUR BOLIVAR": 914, "SIMACOTA": 1063, "SIMITI": 975,
+  "SOCORRO": 366, "SUAITA": 426, "TIBU": 1128, "VALLE DE SAN JOSE": 396,
+  "VELEZ": 735, "VILLA DEL ROSARIO": 417, "VILLANUEVA": 463, "YONDO": 579, "ZAPATOCA": 460
+};
+
+const ALL_CITIES = Object.keys(TARIFAS).sort();
+let rowCount = 0;
+const ddActive = {};
+
+function fmtInt(n) {
+  return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+}
+
+function addRow() {
+  rowCount++;
+  const id = rowCount;
+  const container = document.createElement('div');
+  container.id = 'container-' + id;
+
+  container.innerHTML = `
+    <div class="city-row" id="row-${id}">
+      <div class="city-wrap" id="cwrap-${id}">
+        <input type="text" class="city-input" id="city-${id}" placeholder="Ciudad..." autocomplete="off"
+          oninput="onCityInput(${id})" onkeydown="onCityKey(event,${id})" onfocus="showDropdown(${id})" onblur="hideDropdown(${id})" />
+        <div class="dropdown" id="dd-${id}" style="display:none"></div>
+      </div>
+      <div class="kilo-wrap">
+        <input type="text" class="kilo-input" id="kg-${id}" placeholder="0" oninput="onKgInput(${id})" />
+        <span class="kilo-unit">kg</span>
+      </div>
+      <button class="remove-btn" onclick="removeRow(${id})" title="Eliminar">×</button>
+    </div>
+    <div class="row-result-card" id="res-${id}">
+      <span class="row-result-formula" id="res-formula-${id}"></span>
+      <span class="row-result-total" id="res-total-${id}"></span>
+    </div>
+  `;
+
+  document.getElementById('cityRows').appendChild(container);
+  document.getElementById('city-' + id).focus();
+}
+
+function removeRow(id) {
+  const el = document.getElementById('container-' + id);
+  if (el) el.remove();
+  recalc();
+}
+
+function onCityInput(id) {
+  showDropdown(id, document.getElementById('city-' + id).value.toUpperCase());
+  recalc();
+}
+
+function showDropdown(id, filter) {
+  const dd = document.getElementById('dd-' + id);
+  const q = filter !== undefined ? filter : document.getElementById('city-' + id).value.toUpperCase();
+  const matches = q.length === 0 ? ALL_CITIES : ALL_CITIES.filter(c => c.includes(q));
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map((c, i) =>
+    `<div class="dropdown-item" id="ddi-${id}-${i}" onmousedown="selectCity(${id},'${c.replace(/'/g,"\\'")}')">
+      ${c} <span>$ ${fmtInt(TARIFAS[c])}/kg</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+  ddActive[id] = 0;
+}
+
+function hideDropdown(id) {
+  setTimeout(() => {
+    const dd = document.getElementById('dd-' + id);
+    if (dd) dd.style.display = 'none';
+  }, 200);
+}
+
+function onCityKey(e, id) {
+  const dd = document.getElementById('dd-' + id);
+  if (dd.style.display === 'none') return;
+  const items = dd.querySelectorAll('.dropdown-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    ddActive[id] = Math.min((ddActive[id] || 0) + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === ddActive[id]));
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    ddActive[id] = Math.max((ddActive[id] || 0) - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active', i === ddActive[id]));
+    e.preventDefault();
+  } else if (e.key === 'Enter') {
+    const active = dd.querySelector('.dropdown-item.active') || items[0];
+    if (active) active.dispatchEvent(new MouseEvent('mousedown'));
+    e.preventDefault();
+  } else if (e.key === 'Escape') {
+    dd.style.display = 'none';
+  }
+}
+
+function selectCity(id, city) {
+  document.getElementById('city-' + id).value = city;
+  document.getElementById('city-' + id).classList.remove('no-match');
+  document.getElementById('city-' + id).classList.add('matched');
+  document.getElementById('dd-' + id).style.display = 'none';
+  document.getElementById('kg-' + id).focus();
+  recalc();
+}
+
+function onKgInput(id) {
+  document.getElementById('kg-' + id).value = document.getElementById('kg-' + id).value.replace(/[^\d.]/g, '');
+  recalc();
+}
+
+function recalc() {
+  let totalKg = 0, totalPagar = 0;
+  document.querySelectorAll('.city-row').forEach(row => {
+    const id = row.id.replace('row-', '');
+    const cityEl = document.getElementById('city-' + id);
+    const kgEl = document.getElementById('kg-' + id);
+    const resCard = document.getElementById('res-' + id);
+    const resFormula = document.getElementById('res-formula-' + id);
+    const resTotal = document.getElementById('res-total-' + id);
+    if (!cityEl || !kgEl) return;
+
+    const city = cityEl.value.toUpperCase().trim();
+    const kg = parseFloat(kgEl.value) || 0;
+    const tarifa = TARIFAS[city] || null;
+
+    if (tarifa && kg > 0) {
+      const subtotal = tarifa * kg;
+      totalKg += kg;
+      totalPagar += subtotal;
+      resFormula.textContent = `${fmtInt(kg)} kg × $ ${fmtInt(tarifa)}`;
+      resTotal.textContent = `$ ${fmtInt(subtotal)}`;
+      resCard.classList.add('visible');
+      cityEl.classList.remove('no-match');
+      cityEl.classList.add('matched');
+    } else {
+      resCard.classList.remove('visible');
+      if (city && !tarifa && city.length > 2) {
+        cityEl.classList.remove('matched');
+        cityEl.classList.add('no-match');
+      } else {
+        cityEl.classList.remove('matched', 'no-match');
+      }
+    }
+  });
+  document.getElementById('totalKilos').textContent = fmtInt(totalKg) + ' kg';
+  document.getElementById('totalPagar').textContent = '$ ' + fmtInt(totalPagar);
+}
+
+addRow();
+</script>
+</body>
+</html>
