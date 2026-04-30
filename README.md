@@ -1,2 +1,2 @@
-# Calculos-Operador-Logistik
-Calculadora para Manuel
+# Calculos-Operador-Reexpedidora-Bucaramanga
+Calculadora para Manuel, para reexpediciones de Bucaramanga
