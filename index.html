@@ -51,6 +51,24 @@
   .pdf-btn-sm:hover { background: linear-gradient(135deg, #1976D2 0%, #1E88E5 100%); box-shadow: 0 5px 20px rgba(21,101,192,0.45); transform: translateY(-1px); }
   .pdf-btn-sm:active { transform: translateY(0); }
   .pdf-btn-sm:disabled { background: #2d3558; color: #6b75a0; cursor: not-allowed; box-shadow: none; transform: none; }
+  /* ── Bloque datos adicionales (Flete / Placa / Anticipo) ── */
+  .extra-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 14px; margin-bottom: 1.25rem; }
+  .extra-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .extra-field { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+  .extra-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b75a0; margin-bottom: 6px; }
+  .extra-input-wrap { display: flex; align-items: center; background: #12172e; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; gap: 4px; }
+  .extra-input-wrap:focus-within { border-color: #4a5580; }
+  .extra-prefix { font-size: 13px; color: #6b75a0; flex-shrink: 0; }
+  .extra-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
+  .extra-input::placeholder { color: #6b75a0; }
+  .extra-input.placa { text-transform: uppercase; letter-spacing: 0.08em; }
+  .anticipo-toggle { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px dashed #2d3558; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-family: 'Sora', sans-serif; color: #6b75a0; margin-top: 8px; transition: all 0.12s; width: 100%; justify-content: center; }
+  .anticipo-toggle:hover { border-color: #4a5580; color: #fff; background: #1e2540; }
+  .anticipo-toggle svg { transition: transform 0.2s; }
+  .anticipo-toggle.open svg { transform: rotate(45deg); }
+  .anticipo-row { display: none; margin-top: 8px; }
+  .anticipo-row.visible { display: flex; }
+
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1565C0; color: #fff; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 22px; border-radius: 99px; opacity: 0; transition: all 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   /* ── Sección Cupos ── */
@@ -134,6 +152,41 @@
     Imprimir / PDF Cupos
   </button>
 
+  <!-- ── Datos adicionales ── -->
+  <div class="section-divider"><span>Datos adicionales</span></div>
+  <div class="extra-block">
+  <div class="extra-row">
+    <div class="extra-field" style="flex:1.4">
+      <label class="extra-label">Flete</label>
+      <div class="extra-input-wrap">
+        <span class="extra-prefix">$</span>
+        <input type="text" class="extra-input" id="extraFlete" placeholder="0" oninput="onFleteInput()" />
+      </div>
+    </div>
+    <div class="extra-field" style="flex:1">
+      <label class="extra-label">Placa del vehículo</label>
+      <div class="extra-input-wrap">
+        <input type="text" class="extra-input placa" id="extraPlaca" placeholder="ABC123" maxlength="6" oninput="onPlacaInput()" />
+      </div>
+    </div>
+  </div>
+  <button class="anticipo-toggle" id="btnAnticipo" onclick="toggleAnticipo()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    <span id="btnAnticipoText">Agregar anticipo</span>
+  </button>
+  <div class="anticipo-row" id="anticipoRow">
+    <div class="extra-field">
+      <label class="extra-label">Anticipo</label>
+      <div class="extra-input-wrap">
+        <span class="extra-prefix">$</span>
+        <input type="text" class="extra-input" id="extraAnticipo" placeholder="0" oninput="onAnticipoInput()" />
+      </div>
+    </div>
+  </div><!-- /anticipo-row -->
+</div><!-- /extra-block -->
+
   <button class="pdf-btn" id="pdfBtn" onclick="generarPDF('ambos')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -143,8 +196,7 @@
     </svg>
     Imprimir / PDF Completo
   </button>
-</div>
-<div class="toast" id="toast"></div>
+</div><!-- /card -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -643,6 +695,57 @@ function generarPDF(modo){
     Y += 20;
   }
 
+  /* ══ DATOS ADICIONALES (flete / placa / anticipo) ══ */
+  const extras = getExtraDatos();
+  const tieneExtras = extras.flete > 0 || extras.placa || extras.anticipo > 0;
+  if (tieneExtras) {
+    // Separador decorativo
+    const segW2 = (MR - ML) / 3;
+    doc.setFillColor(21,101,192);  doc.rect(ML,           Y, segW2, 1.5, 'F');
+    doc.setFillColor(198,40,40);   doc.rect(ML + segW2,   Y, segW2, 1.5, 'F');
+    doc.setFillColor(46,125,50);   doc.rect(ML + segW2*2, Y, segW2, 1.5, 'F');
+    Y += 8;
+
+    // Título centrado
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(107, 117, 160);
+    doc.text('DATOS ADICIONALES', W / 2, Y, { align: 'center' });
+    Y += 7;
+
+    // Líneas de datos (solo los que tienen valor), alineadas a la izquierda
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    if (extras.placa) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Placa:', ML + 4, Y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 80, 140);
+      doc.text(extras.placa, ML + 22, Y);
+      Y += 6;
+    }
+    if (extras.flete > 0) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Flete:', ML + 4, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 101, 192);
+      doc.text(`$ ${fmtInt(extras.flete)}`, ML + 22, Y);
+      Y += 6;
+    }
+    if (extras.anticipo > 0) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Anticipo:', ML + 4, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(198, 40, 40);
+      doc.text(`$ ${fmtInt(extras.anticipo)}`, ML + 26, Y);
+      Y += 6;
+    }
+    Y += 4;
+  }
+
   /* Pie de página */
   doc.setFillColor(46, 125, 50);  doc.rect(0, H - 10, W, 10, 'F');
   doc.setFillColor(198, 40, 40);  doc.rect(0, H - 13, W, 3, 'F');
@@ -661,6 +764,57 @@ function showToast(msg,bg){
   t.style.background=bg||'#1565C0';
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ── Datos adicionales: flete, placa, anticipo ── */
+function fmtFlete(val) {
+  const digits = val.replace(/\D/g, '');
+  if (!digits) return '';
+  return new Intl.NumberFormat('es-CO', {minimumFractionDigits:0,maximumFractionDigits:0}).format(parseInt(digits, 10));
+}
+
+function onFleteInput() {
+  const el = document.getElementById('extraFlete');
+  const cursor = el.selectionStart;
+  const prev = el.value;
+  el.value = fmtFlete(prev);
+  // reposicionar cursor aproximadamente
+  const diff = el.value.length - prev.length;
+  el.setSelectionRange(cursor + diff, cursor + diff);
+}
+
+function onAnticipoInput() {
+  const el = document.getElementById('extraAnticipo');
+  const cursor = el.selectionStart;
+  const prev = el.value;
+  el.value = fmtFlete(prev);
+  const diff = el.value.length - prev.length;
+  el.setSelectionRange(cursor + diff, cursor + diff);
+}
+
+function onPlacaInput() {
+  const el = document.getElementById('extraPlaca');
+  // solo letras y dígitos, máx 6 caracteres, mayúsculas
+  el.value = el.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+}
+
+function toggleAnticipo() {
+  const row = document.getElementById('anticipoRow');
+  const btn = document.getElementById('btnAnticipo');
+  const visible = row.classList.toggle('visible');
+  btn.classList.toggle('open', visible);
+  document.getElementById('btnAnticipoText').textContent = visible ? 'Quitar anticipo' : 'Agregar anticipo';
+  if (!visible) document.getElementById('extraAnticipo').value = '';
+}
+
+function getExtraDatos() {
+  const fleteRaw = document.getElementById('extraFlete').value.replace(/\./g,'').replace(/,/g,'');
+  const flete = parseInt(fleteRaw.replace(/\D/g,'')) || 0;
+  const placa = document.getElementById('extraPlaca').value.trim();
+  const anticipoRaw = document.getElementById('extraAnticipo')?.value?.replace(/\./g,'').replace(/,/g,'') || '';
+  const anticipo = parseInt(anticipoRaw.replace(/\D/g,'')) || 0;
+  const anticipoVisible = document.getElementById('anticipoRow').classList.contains('visible');
+  return { flete, placa, anticipo: anticipoVisible ? anticipo : 0 };
 }
 
 addRow();
