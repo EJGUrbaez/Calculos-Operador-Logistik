@@ -174,7 +174,7 @@
     <div class="extra-field">
       <label class="extra-label">Destino</label>
       <div class="extra-input-wrap">
-        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="this.value=this.value.charAt(0).toUpperCase()+this.value.slice(1)" />
+        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ ]/g,'');this.value=this.value.charAt(0).toUpperCase()+this.value.slice(1)" />
       </div>
     </div>
   </div>
