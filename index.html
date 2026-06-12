@@ -170,6 +170,14 @@
       </div>
     </div>
   </div>
+  <div class="extra-row" style="margin-top:8px">
+    <div class="extra-field">
+      <label class="extra-label">Destino</label>
+      <div class="extra-input-wrap">
+        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="this.value=this.value.charAt(0).toUpperCase()+this.value.slice(1)" />
+      </div>
+    </div>
+  </div>
   <button class="anticipo-toggle" id="btnAnticipo" onclick="toggleAnticipo()">
     <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
       <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
@@ -697,7 +705,7 @@ function generarPDF(modo){
 
   /* ══ DATOS ADICIONALES (flete / placa / anticipo) ══ */
   const extras = getExtraDatos();
-  const tieneExtras = extras.flete > 0 || extras.placa || extras.anticipo > 0;
+  const tieneExtras = extras.flete > 0 || extras.placa || extras.anticipo > 0 || extras.destino;
   if (tieneExtras) {
     // Separador decorativo
     const segW2 = (MR - ML) / 3;
@@ -715,15 +723,24 @@ function generarPDF(modo){
 
     // Líneas de datos (solo los que tienen valor), alineadas a la izquierda
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(12.6);
+    if (extras.destino) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Destino:', ML + 4, Y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 80, 140);
+      doc.text(extras.destino, ML + 36, Y);
+      Y += 8;
+    }
     if (extras.placa) {
       doc.setTextColor(13, 30, 80);
       doc.setFont('helvetica', 'bold');
       doc.text('Placa:', ML + 4, Y);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(50, 80, 140);
-      doc.text(extras.placa, ML + 22, Y);
-      Y += 6;
+      doc.text(extras.placa, ML + 36, Y);
+      Y += 8;
     }
     if (extras.flete > 0) {
       doc.setTextColor(13, 30, 80);
@@ -731,8 +748,8 @@ function generarPDF(modo){
       doc.text('Flete:', ML + 4, Y);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(21, 101, 192);
-      doc.text(`$ ${fmtInt(extras.flete)}`, ML + 22, Y);
-      Y += 6;
+      doc.text(`$ ${fmtInt(extras.flete)}`, ML + 36, Y);
+      Y += 8;
     }
     if (extras.anticipo > 0) {
       doc.setTextColor(13, 30, 80);
@@ -740,8 +757,8 @@ function generarPDF(modo){
       doc.text('Anticipo:', ML + 4, Y);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(198, 40, 40);
-      doc.text(`$ ${fmtInt(extras.anticipo)}`, ML + 26, Y);
-      Y += 6;
+      doc.text(`$ ${fmtInt(extras.anticipo)}`, ML + 36, Y);
+      Y += 8;
     }
     Y += 4;
   }
@@ -794,8 +811,11 @@ function onAnticipoInput() {
 
 function onPlacaInput() {
   const el = document.getElementById('extraPlaca');
-  // solo letras y dígitos, máx 6 caracteres, mayúsculas
-  el.value = el.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6);
+  // Primeros 3 caracteres: solo letras. Siguientes 3: solo números.
+  const raw = el.value.toUpperCase();
+  const letras = raw.replace(/[^A-Z]/g, '').slice(0, 3);
+  const numeros = raw.replace(/[^0-9]/g, '').slice(0, 3);
+  el.value = letras + numeros;
 }
 
 function toggleAnticipo() {
@@ -814,7 +834,8 @@ function getExtraDatos() {
   const anticipoRaw = document.getElementById('extraAnticipo')?.value?.replace(/\./g,'').replace(/,/g,'') || '';
   const anticipo = parseInt(anticipoRaw.replace(/\D/g,'')) || 0;
   const anticipoVisible = document.getElementById('anticipoRow').classList.contains('visible');
-  return { flete, placa, anticipo: anticipoVisible ? anticipo : 0 };
+  const destino = document.getElementById('extraDestino').value.trim();
+  return { flete, placa, anticipo: anticipoVisible ? anticipo : 0, destino };
 }
 
 addRow();
