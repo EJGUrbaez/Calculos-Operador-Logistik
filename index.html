@@ -89,6 +89,18 @@
   .cupo-result-formula { font-size: 12px; color: #8ab4d4; white-space: nowrap; flex-shrink: 0; }
   .cupo-result-total { font-size: 16px; font-weight: 700; color: #4caf82; text-align: right; white-space: nowrap; }
   .cupo-total-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 14px; margin-bottom: 1.25rem; }
+  /* ── Modal de validación ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: #12172e; border: 1px solid #2d3558; border-radius: 16px; padding: 1.75rem 1.5rem; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .modal-icon { font-size: 32px; margin-bottom: 10px; }
+  .modal-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .modal-text { font-size: 13px; color: #9aa4cc; margin-bottom: 18px; line-height: 1.6; text-align: left; }
+  .modal-text ul { padding-left: 18px; margin-top: 6px; }
+  .modal-text li { color: #e05050; font-weight: 600; margin-bottom: 4px; }
+  .modal-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Sora', sans-serif; }
+  .modal-btn:hover { background: linear-gradient(135deg, #1976D2 0%, #1E88E5 100%); }
+  .extra-input-wrap.error { border-color: #5a2020 !important; box-shadow: 0 0 0 1px #5a2020; }
 </style>
 </head>
 <body>
@@ -158,14 +170,14 @@
   <div class="extra-row">
     <div class="extra-field" style="flex:1.4">
       <label class="extra-label">Flete</label>
-      <div class="extra-input-wrap">
+      <div class="extra-input-wrap" id="wrapFlete">
         <span class="extra-prefix">$</span>
         <input type="text" class="extra-input" id="extraFlete" placeholder="0" oninput="onFleteInput()" />
       </div>
     </div>
     <div class="extra-field" style="flex:1">
       <label class="extra-label">Placa del vehículo</label>
-      <div class="extra-input-wrap">
+      <div class="extra-input-wrap" id="wrapPlaca">
         <input type="text" class="extra-input placa" id="extraPlaca" placeholder="ABC123" maxlength="6" oninput="onPlacaInput()" />
       </div>
     </div>
@@ -173,8 +185,8 @@
   <div class="extra-row" style="margin-top:8px">
     <div class="extra-field">
       <label class="extra-label">Destino</label>
-      <div class="extra-input-wrap">
-        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ ]/g,'');this.value=this.value.charAt(0).toUpperCase()+this.value.slice(1)" />
+      <div class="extra-input-wrap" id="wrapDestino">
+        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="onDestinoInput()" />
       </div>
     </div>
   </div>
@@ -205,6 +217,18 @@
     Imprimir / PDF Completo
   </button>
 </div><!-- /card -->
+
+<!-- ── Modal de validación ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Faltan datos obligatorios</div>
+    <div class="modal-text" id="modalText"></div>
+    <button class="modal-btn" onclick="cerrarModalFaltantes()">Entendido</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
@@ -283,7 +307,6 @@ function hideDropdown(id) { setTimeout(()=>{ const d=document.getElementById('dd
 function onCityKey(e,id) {
   const dd=document.getElementById('dd-'+id);
   const items=dd?dd.querySelectorAll('.dropdown-item'):[];
-  // Flecha abajo abre el dropdown si está cerrado
   if(e.key==='ArrowDown' && (!dd || dd.style.display==='none')){
     showDropdown(id); e.preventDefault(); return;
   }
@@ -365,8 +388,6 @@ function getFechaHora(){
    Precio fijo por cupo según ciudad
 ══════════════════════════════════════ */
 const TARIFAS_CUPO = {};
-// Construir tarifas de cupo desde las mismas ciudades (precio = tarifa * 3000 kg aprox)
-// Valores reales por ciudad:
 (function(){
   const cupos = {
     "BUCARAMANGA":400000,
@@ -481,11 +502,44 @@ function updatePdfBtn() {
   if (btnC) btnC.disabled = !cupos;
 }
 
+/* ── Validación de "Datos adicionales" antes de generar PDF ── */
+function validarDatosAdicionales() {
+  const extras = getExtraDatos();
+  const faltantes = [];
+  if (!extras.placa || extras.placa.length < 6) faltantes.push({ campo: 'Placa del vehículo', id: 'wrapPlaca' });
+  if (!extras.destino) faltantes.push({ campo: 'Destino', id: 'wrapDestino' });
+  if (!extras.flete || extras.flete <= 0) faltantes.push({ campo: 'Flete', id: 'wrapFlete' });
+  return faltantes;
+}
+
+function mostrarModalFaltantes(faltantes) {
+  const text = document.getElementById('modalText');
+  text.innerHTML = 'Para generar el PDF debes completar estos campos en <b>Datos adicionales</b>:<ul>' +
+    faltantes.map(f => `<li>${f.campo}</li>`).join('') + '</ul>';
+  document.querySelectorAll('.extra-input-wrap').forEach(w => w.classList.remove('error'));
+  faltantes.forEach(f => {
+    const wrap = document.getElementById(f.id);
+    if (wrap) wrap.classList.add('error');
+  });
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function cerrarModalFaltantes() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
 /* ══════════════════════════════════════
    PALETA EXPRESO ANDINO
    Azul  #1565C0 | Rojo #C62828 | Verde #2E7D32
 ══════════════════════════════════════ */
 function generarPDF(modo){
+  // ── Validación obligatoria de datos adicionales ──
+  const faltantes = validarDatosAdicionales();
+  if (faltantes.length > 0) {
+    mostrarModalFaltantes(faltantes);
+    return;
+  }
+
   const _tieneKilos = hasKilosData();
   const _tieneCupos = hasCuposData();
   const tieneKilos = (modo === 'cupos') ? false : _tieneKilos;
@@ -521,22 +575,38 @@ function generarPDF(modo){
   const totalCupos = filasCupos.reduce((a, f) => a + f.qty, 0);
   const totalCuposPagar = filasCupos.reduce((a, f) => a + f.subtotal, 0);
   const { fecha, hora } = getFechaHora();
+  const extras = getExtraDatos();
 
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, H = 297, ML = 16, MR = W - ML;
+  const PAGE_BOTTOM = H - 20; // margen de seguridad para no invadir el pie de página
   let Y = 0;
+
+  /* ── Salto de página seguro: evita que cualquier bloque quede cortado ── */
+  function checkPageBreak(needed) {
+    if (Y + needed > PAGE_BOTTOM) {
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, W, H, 'F');
+      doc.setFillColor(21, 101, 192);
+      doc.rect(0, 0, W, 18, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255);
+      doc.text('TARIFAS REEXPEDIDORA BUCARAMANGA (continuación)', W / 2, 11, { align: 'center' });
+      Y = 30;
+    }
+  }
 
   /* Fondo blanco */
   doc.setFillColor(255, 255, 255);
   doc.rect(0, 0, W, H, 'F');
 
-  /* Logo marca de agua */
+  /* Logo marca de agua (muy tenue, para no interferir con el texto) */
   try {
-    const lW = 90, lH = 90;
+    const lW = 70, lH = 70;
     const lX = (W - lW) / 2, lY = (H - lH) / 2 - 10;
     doc.saveGraphicsState();
-    doc.setGState(new doc.GState({ opacity: 0.07 }));
+    doc.setGState(new doc.GState({ opacity: 0.025 }));
     doc.addImage(LOGO_B64, LOGO_MIME, lX, lY, lW, lH);
     doc.restoreGraphicsState();
   } catch(e) {}
@@ -570,11 +640,14 @@ function generarPDF(modo){
 
   /* ══ SECCIÓN KILOS (solo si tiene datos) ══ */
   if (tieneKilos) {
+    checkPageBreak(30);
+
     /* Subtítulo sección */
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(107, 117, 160);
-    doc.text('CIUDAD Y KILOS', ML, Y - 3);
+    doc.text('CIUDAD Y KILOS', ML, Y);
+    Y += 7;
 
     /* Cabecera tabla */
     doc.setFillColor(13, 71, 161);
@@ -591,6 +664,7 @@ function generarPDF(modo){
 
     filasKilos.forEach((f, i) => {
       const rowH = 9;
+      checkPageBreak(rowH + 2);
       if (i % 2 === 0) { doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F'); }
       const accent = [[21,101,192],[198,40,40],[46,125,50]][i % 3];
       doc.setFillColor(...accent);
@@ -605,6 +679,7 @@ function generarPDF(modo){
       Y += rowH + 1;
     });
 
+    checkPageBreak(30);
     Y += 4;
     const segW = (MR - ML) / 3;
     doc.setFillColor(21,101,192); doc.rect(ML,           Y, segW, 2, 'F');
@@ -612,7 +687,7 @@ function generarPDF(modo){
     doc.setFillColor(46,125,50);  doc.rect(ML + segW*2,  Y, segW, 2, 'F');
     Y += 8;
 
-    const rowH = 10;
+    let rowH = 10;
     doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
     doc.setFillColor(21,101,192);    doc.rect(ML, Y - 5, 3, rowH, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
@@ -621,6 +696,7 @@ function generarPDF(modo){
     doc.text(`${fmtInt(totalKg)} kg`, COL.subtotal, Y, { baseline: 'middle', align: 'right' });
     Y += rowH + 1;
 
+    checkPageBreak(12);
     doc.setFillColor(210,225,250); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
     doc.setFillColor(21,101,192);  doc.rect(ML, Y - 5, 3, rowH, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
@@ -632,10 +708,13 @@ function generarPDF(modo){
 
   /* ══ SECCIÓN CUPOS (solo si tiene datos) ══ */
   if (tieneCupos) {
+    checkPageBreak(30);
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(107, 117, 160);
-    doc.text('CUPOS 3 TON \u2013 4.5 TON', ML, Y - 3);
+    doc.text('CUPOS 3 TON \u2013 4.5 TON', ML, Y);
+    Y += 7;
 
     /* Cabecera tabla cupos */
     doc.setFillColor(13, 71, 161);
@@ -652,6 +731,7 @@ function generarPDF(modo){
 
     filasCupos.forEach((f, i) => {
       const rowH = 9;
+      checkPageBreak(rowH + 2);
       if (i % 2 === 0) { doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F'); }
       const accent = [[21,101,192],[198,40,40],[46,125,50]][i % 3];
       doc.setFillColor(...accent);
@@ -666,6 +746,7 @@ function generarPDF(modo){
       Y += rowH + 1;
     });
 
+    checkPageBreak(30);
     Y += 4;
     const segW = (MR - ML) / 3;
     doc.setFillColor(21,101,192); doc.rect(ML,           Y, segW, 2, 'F');
@@ -673,7 +754,7 @@ function generarPDF(modo){
     doc.setFillColor(46,125,50);  doc.rect(ML + segW*2,  Y, segW, 2, 'F');
     Y += 8;
 
-    const rowH = 10;
+    let rowH = 10;
     doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
     doc.setFillColor(21,101,192);    doc.rect(ML, Y - 5, 3, rowH, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
@@ -682,6 +763,7 @@ function generarPDF(modo){
     doc.text(`${fmtInt(totalCupos)} cupo${totalCupos > 1 ? 's' : ''}`, COLC.subtotal, Y, { baseline: 'middle', align: 'right' });
     Y += rowH + 1;
 
+    checkPageBreak(12);
     doc.setFillColor(210,225,250); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
     doc.setFillColor(21,101,192);  doc.rect(ML, Y - 5, 3, rowH, 'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
@@ -693,6 +775,7 @@ function generarPDF(modo){
 
   /* ══ GRAN TOTAL (solo si ambas secciones tienen datos) ══ */
   if (tieneKilos && tieneCupos) {
+    checkPageBreak(19);
     const grandTotal = totalKilosPagar + totalCuposPagar;
     doc.setFillColor(21, 101, 192);
     doc.roundedRect(ML, Y - 5, MR - ML, 14, 3, 3, 'F');
@@ -703,25 +786,33 @@ function generarPDF(modo){
     Y += 20;
   }
 
-  /* ══ DATOS ADICIONALES (flete / placa / anticipo) ══ */
-  const extras = getExtraDatos();
+  /* ══ DATOS ADICIONALES (flete / placa / anticipo / destino) ══ */
   const tieneExtras = extras.flete > 0 || extras.placa || extras.anticipo > 0 || extras.destino;
   if (tieneExtras) {
-    // Separador decorativo
+    let lineas = 0;
+    if (extras.destino) lineas++;
+    if (extras.placa) lineas++;
+    if (extras.flete > 0) lineas++;
+    if (extras.anticipo > 0) lineas++;
+    const bloqueAlto = 15 + lineas * 8;
+    checkPageBreak(bloqueAlto);
+
+    /* Fondo sólido para que la marca de agua no se vea "por debajo" del texto */
+    doc.setFillColor(255, 255, 255);
+    doc.rect(ML - 4, Y - 4, (MR - ML) + 8, bloqueAlto + 4, 'F');
+
     const segW2 = (MR - ML) / 3;
     doc.setFillColor(21,101,192);  doc.rect(ML,           Y, segW2, 1.5, 'F');
     doc.setFillColor(198,40,40);   doc.rect(ML + segW2,   Y, segW2, 1.5, 'F');
     doc.setFillColor(46,125,50);   doc.rect(ML + segW2*2, Y, segW2, 1.5, 'F');
     Y += 8;
 
-    // Título centrado
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(107, 117, 160);
     doc.text('DATOS ADICIONALES', W / 2, Y, { align: 'center' });
     Y += 7;
 
-    // Líneas de datos (solo los que tienen valor), alineadas a la izquierda
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(12.6);
     if (extras.destino) {
@@ -763,14 +854,28 @@ function generarPDF(modo){
     Y += 4;
   }
 
-  /* Pie de página */
-  doc.setFillColor(46, 125, 50);  doc.rect(0, H - 10, W, 10, 'F');
-  doc.setFillColor(198, 40, 40);  doc.rect(0, H - 13, W, 3, 'F');
-  doc.setFillColor(21, 101, 192); doc.rect(0, H - 15, W, 2, 'F');
-  doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(200, 230, 200);
-  doc.text('Expreso Andino de Carga S.A.S.  \u2014  Documento generado automaticamente', W / 2, H - 4, { align: 'center' });
+  /* ── Pie de página en TODAS las páginas generadas ── */
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(46, 125, 50);  doc.rect(0, H - 10, W, 10, 'F');
+    doc.setFillColor(198, 40, 40);  doc.rect(0, H - 13, W, 3, 'F');
+    doc.setFillColor(21, 101, 192); doc.rect(0, H - 15, W, 2, 'F');
+    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(200, 230, 200);
+    doc.text('Expreso Andino de Carga S.A.S.  \u2014  Documento generado automaticamente', W / 2, H - 4, { align: 'center' });
+    if (totalPages > 1) {
+      doc.setFontSize(7); doc.setTextColor(230,240,230);
+      doc.text(`Pagina ${p} de ${totalPages}`, MR, H - 4, { align: 'right' });
+    }
+  }
 
-  const nombre = `tarifas_reexpedidora_${hora.replace(/:/g, '-')}.pdf`;
+  /* ── Nombre de archivo: PLACA + FECHA ── */
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const placaArchivo = (extras.placa || 'SIN-PLACA').replace(/\s+/g, '');
+  const nombre = `${placaArchivo}_${dd}-${mm}-${yyyy}.pdf`;
   doc.save(nombre);
   showToast('\u2713 PDF generado correctamente');
 }
@@ -783,7 +888,7 @@ function showToast(msg,bg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-/* ── Datos adicionales: flete, placa, anticipo ── */
+/* ── Datos adicionales: flete, placa, anticipo, destino ── */
 function fmtFlete(val) {
   const digits = val.replace(/\D/g, '');
   if (!digits) return '';
@@ -795,9 +900,9 @@ function onFleteInput() {
   const cursor = el.selectionStart;
   const prev = el.value;
   el.value = fmtFlete(prev);
-  // reposicionar cursor aproximadamente
   const diff = el.value.length - prev.length;
   el.setSelectionRange(cursor + diff, cursor + diff);
+  document.getElementById('wrapFlete').classList.remove('error');
 }
 
 function onAnticipoInput() {
@@ -811,11 +916,17 @@ function onAnticipoInput() {
 
 function onPlacaInput() {
   const el = document.getElementById('extraPlaca');
-  // Primeros 3 caracteres: solo letras. Siguientes 3: solo números.
   const raw = el.value.toUpperCase();
   const letras = raw.replace(/[^A-Z]/g, '').slice(0, 3);
   const numeros = raw.replace(/[^0-9]/g, '').slice(0, 3);
   el.value = letras + numeros;
+  document.getElementById('wrapPlaca').classList.remove('error');
+}
+
+function onDestinoInput() {
+  const el = document.getElementById('extraDestino');
+  el.value = el.value.charAt(0).toUpperCase() + el.value.slice(1);
+  document.getElementById('wrapDestino').classList.remove('error');
 }
 
 function toggleAnticipo() {
