@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reexpedidora Bucaramanga</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: #0b0f1e; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; color: #fff; }
+  .card { background: #12172e; border-radius: 18px; padding: 2rem 1.75rem; width: 100%; max-width: 500px; height: fit-content; }
+  .app-title { font-size: 20px; font-weight: 700; color: #fff; text-align: center; margin-bottom: 0.25rem; }
+  .app-sub { font-size: 12px; color: #6b75a0; text-align: center; margin-bottom: 1.75rem; }
+  .field-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; margin-bottom: 10px; }
+  .city-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .city-wrap { position: relative; flex: 1.4; min-width: 0; }
+  .city-input { width: 100%; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 12px; border: 1px solid #2d3558; border-radius: 10px; color: #fff; background: #1e2540; outline: none; }
+  .city-input::placeholder { color: #6b75a0; }
+  .city-input:focus { border-color: #4a5580; }
+  .city-input.matched { border-color: #2a6048; color: #4caf82; }
+  .city-input.no-match { border-color: #5a2020; color: #e05050; }
+  .dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; z-index: 100; max-height: 180px; overflow-y: auto; }
+  .dropdown-item { padding: 9px 12px; font-size: 13px; cursor: pointer; color: #fff; }
+  .dropdown-item:hover, .dropdown-item.active { background: #2a3260; }
+  .dropdown-item span { font-size: 11px; color: #6b75a0; margin-left: 6px; }
+  .kilo-wrap { display: flex; align-items: center; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; flex: 1; min-width: 0; gap: 4px; }
+  .kilo-wrap:focus-within { border-color: #4a5580; }
+  .kilo-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
+  .kilo-input::placeholder { color: #6b75a0; }
+  .kilo-unit { font-size: 11px; color: #6b75a0; white-space: nowrap; flex-shrink: 0; }
+  .remove-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #2d3558; background: #1a2040; color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s; }
+  .remove-btn:hover { background: #2d1a1a; color: #e05050; border-color: #5a2020; }
+  .row-result-card { background: #1a2540; border: 1px solid #2a3a5a; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; display: none; justify-content: space-between; align-items: center; gap: 8px; }
+  .row-result-card.visible { display: flex; }
+  .row-result-formula { font-size: 13px; color: #8ab4d4; white-space: nowrap; flex-shrink: 0; }
+  .row-result-total { font-size: 18px; font-weight: 700; color: #4caf82; text-align: right; white-space: nowrap; }
+  .add-btn { width: 100%; padding: 9px; border-radius: 10px; border: 1px dashed #2d3558; background: transparent; color: #fff; cursor: pointer; font-size: 13px; font-family: 'Sora', sans-serif; margin-top: 4px; margin-bottom: 1.25rem; transition: all 0.12s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-btn:hover { background: #1e2540; border-color: #4a5580; }
+  .total-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 14px; margin-bottom: 1.25rem; }
+  .total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2d3558; }
+  .total-row:last-child { border-bottom: none; }
+  .total-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6b75a0; }
+  .total-value { font-size: 17px; font-weight: 700; color: #fff; }
+  .total-value.big { font-size: 26px; }
+  .pdf-btn { width: 100%; padding: 13px; border-radius: 12px; border: none; background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); color: #fff; cursor: pointer; font-size: 14px; font-weight: 700; font-family: 'Sora', sans-serif; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 9px; transition: all 0.15s; box-shadow: 0 4px 18px rgba(21,101,192,0.35); }
+  .pdf-btn:hover { background: linear-gradient(135deg, #1976D2 0%, #1E88E5 100%); box-shadow: 0 6px 24px rgba(21,101,192,0.5); transform: translateY(-1px); }
+  .pdf-btn:active { transform: translateY(0); }
+  .pdf-btn:disabled { background: #2d3558; color: #6b75a0; cursor: not-allowed; box-shadow: none; transform: none; }
+
+  .pdf-btn-sm { width: 100%; padding: 10px; border-radius: 10px; border: none; background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Sora', sans-serif; letter-spacing: 0.04em; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.15s; box-shadow: 0 3px 14px rgba(21,101,192,0.3); margin-bottom: 1.25rem; }
+  .pdf-btn-sm:hover { background: linear-gradient(135deg, #1976D2 0%, #1E88E5 100%); box-shadow: 0 5px 20px rgba(21,101,192,0.45); transform: translateY(-1px); }
+  .pdf-btn-sm:active { transform: translateY(0); }
+  .pdf-btn-sm:disabled { background: #2d3558; color: #6b75a0; cursor: not-allowed; box-shadow: none; transform: none; }
+  /* ── Bloque datos adicionales (Flete / Placa / Anticipo) ── */
+  .extra-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 14px; margin-bottom: 1.25rem; }
+  .extra-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .extra-field { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+  .extra-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #6b75a0; margin-bottom: 6px; }
+  .extra-input-wrap { display: flex; align-items: center; background: #12172e; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; gap: 4px; }
+  .extra-input-wrap:focus-within { border-color: #4a5580; }
+  .extra-prefix { font-size: 13px; color: #6b75a0; flex-shrink: 0; }
+  .extra-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
+  .extra-input::placeholder { color: #6b75a0; }
+  .extra-input.placa { text-transform: uppercase; letter-spacing: 0.08em; }
+  .anticipo-toggle { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px dashed #2d3558; border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 12px; font-family: 'Sora', sans-serif; color: #6b75a0; margin-top: 8px; transition: all 0.12s; width: 100%; justify-content: center; }
+  .anticipo-toggle:hover { border-color: #4a5580; color: #fff; background: #1e2540; }
+  .anticipo-toggle svg { transition: transform 0.2s; }
+  .anticipo-toggle.open svg { transform: rotate(45deg); }
+  .anticipo-row { display: none; margin-top: 8px; }
+  .anticipo-row.visible { display: flex; }
+
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(60px); background: #1565C0; color: #fff; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 22px; border-radius: 99px; opacity: 0; transition: all 0.3s cubic-bezier(.34,1.56,.64,1); pointer-events: none; white-space: nowrap; z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* ── Sección Cupos ── */
+  .section-divider { display: flex; align-items: center; gap: 10px; margin: 1.5rem 0 1rem; }
+  .section-divider span { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b75a0; white-space: nowrap; }
+  .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: #2d3558; }
+  .cupo-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .cupo-select { flex: 1.4; min-width: 0; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 12px; border: 1px solid #2d3558; border-radius: 10px; color: #fff; background: #1e2540; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer; }
+  .cupo-select:focus { border-color: #4a5580; }
+  .cupo-select option { background: #1e2540; color: #fff; }
+  .cupo-qty-wrap { display: flex; align-items: center; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 10px; flex: 1; min-width: 0; gap: 4px; }
+  .cupo-qty-wrap:focus-within { border-color: #4a5580; }
+  .cupo-qty-input { flex: 1; font-size: 13px; font-family: 'Sora', sans-serif; padding: 10px 0; border: none; outline: none; color: #fff; background: transparent; min-width: 0; }
+  .cupo-qty-input::placeholder { color: #6b75a0; }
+  .cupo-qty-unit { font-size: 11px; color: #6b75a0; white-space: nowrap; }
+  .cupo-result-card { background: #1a2540; border: 1px solid #2a3a5a; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; display: none; justify-content: space-between; align-items: center; gap: 8px; }
+  .cupo-result-card.visible { display: flex; }
+  .cupo-result-formula { font-size: 12px; color: #8ab4d4; white-space: nowrap; flex-shrink: 0; }
+  .cupo-result-total { font-size: 16px; font-weight: 700; color: #4caf82; text-align: right; white-space: nowrap; }
+  .cupo-total-block { background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 0 14px; margin-bottom: 1.25rem; }
+  /* ── Modal de validación ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 10000; padding: 1rem; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: #12172e; border: 1px solid #2d3558; border-radius: 16px; padding: 1.75rem 1.5rem; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .modal-icon { font-size: 32px; margin-bottom: 10px; }
+  .modal-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .modal-text { font-size: 13px; color: #9aa4cc; margin-bottom: 18px; line-height: 1.6; text-align: left; }
+  .modal-text ul { padding-left: 18px; margin-top: 6px; }
+  .modal-text li { color: #e05050; font-weight: 600; margin-bottom: 4px; }
+  .modal-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Sora', sans-serif; }
+  .modal-btn:hover { background: linear-gradient(135deg, #1976D2 0%, #1E88E5 100%); }
+  .extra-input-wrap.error { border-color: #5a2020 !important; box-shadow: 0 0 0 1px #5a2020; }
+
+  /* ── Remesas por cupo ── */
+  .remesas-wrap { display: none; margin-bottom: 8px; }
+  .remesas-wrap.visible { display: block; }
+  .remesas-wrap .extra-label { display: block; }
+
+  /* ── Ciudad temporal ── */
+  .temp-form { display: none; background: #1e2540; border: 1px solid #2d3558; border-radius: 10px; padding: 14px; margin-bottom: 1.25rem; }
+  .temp-form.visible { display: block; }
+  .temp-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .temp-chip { display: flex; align-items: center; gap: 6px; background: #12172e; border: 1px solid #2d3558; border-radius: 99px; padding: 4px 6px 4px 12px; font-size: 11px; color: #fff; }
+  .temp-chip button { background: none; border: none; color: #6b75a0; cursor: pointer; font-size: 15px; line-height: 1; }
+  .temp-chip button:hover { color: #e05050; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="app-title">Tarifas Reexpedidora Bucaramanga</div>
+  <div class="app-sub">Oscar Pérez — Valor por kilo</div>
+  <div class="field-label">Ciudad y kilos</div>
+  <div id="cityRows"></div>
+  <button class="add-btn" onclick="addRow()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    Agregar ciudad
+  </button>
+  <button class="add-btn" style="margin-top:-0.5rem" onclick="toggleTempCity()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    Ciudad temporal (fuera de la lista)
+  </button>
+  <div class="temp-form" id="tempForm">
+    <div class="extra-row">
+      <div class="extra-field" style="flex:1.4">
+        <label class="extra-label">Ciudad</label>
+        <div class="extra-input-wrap">
+          <input type="text" class="extra-input" id="tempCityName" placeholder="Nombre de la ciudad" autocomplete="off" />
+        </div>
+      </div>
+      <div class="extra-field" style="flex:1">
+        <label class="extra-label">Valor por kilo</label>
+        <div class="extra-input-wrap">
+          <span class="extra-prefix">$</span>
+          <input type="text" class="extra-input" id="tempCityValor" placeholder="0" oninput="this.value=fmtFlete(this.value)" />
+        </div>
+      </div>
+    </div>
+    <button class="pdf-btn-sm" style="margin-top:10px;margin-bottom:0" onclick="guardarCiudadTemp()">Guardar ciudad temporal</button>
+    <div class="temp-list" id="tempList"></div>
+  </div>
+  <div class="total-block">
+    <div class="total-row">
+      <span class="total-label">Total kilos</span>
+      <span class="total-value" id="totalKilos">0 kg</span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total a pagar</span>
+      <span class="total-value big" id="totalPagar">$ 0</span>
+    </div>
+  </div>
+
+  <button class="pdf-btn-sm" id="pdfBtnKilos" onclick="generarPDF('kilos')" disabled>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+    </svg>
+    Imprimir / PDF Kilos
+  </button>
+  <!-- ── Sección Cupos 3-4.5 ton ── -->
+  <div class="section-divider"><span>Cupos 3 ton – 4.5 ton</span></div>
+  <div class="field-label">Ciudad y cantidad de cupos</div>
+  <div id="cupoRows"></div>
+  <button class="add-btn" onclick="addCupoRow()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    Agregar cupo
+  </button>
+  <div class="cupo-total-block">
+    <div class="total-row">
+      <span class="total-label">Total cupos</span>
+      <span class="total-value" id="totalCupos">0 cupos</span>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total cupos a pagar</span>
+      <span class="total-value big" id="totalCuposPagar">$ 0</span>
+    </div>
+  </div>
+
+  <button class="pdf-btn-sm" id="pdfBtnCupos" onclick="generarPDF('cupos')" disabled>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+    </svg>
+    Imprimir / PDF Cupos
+  </button>
+
+  <!-- ── Datos adicionales ── -->
+  <div class="section-divider"><span>Datos adicionales</span></div>
+  <div class="extra-block">
+  <div class="extra-row">
+    <div class="extra-field" style="flex:1.4">
+      <label class="extra-label">Flete</label>
+      <div class="extra-input-wrap" id="wrapFlete">
+        <span class="extra-prefix">$</span>
+        <input type="text" class="extra-input" id="extraFlete" placeholder="0" oninput="onFleteInput()" />
+      </div>
+    </div>
+    <div class="extra-field" style="flex:1">
+      <label class="extra-label">Placa del vehículo</label>
+      <div class="extra-input-wrap" id="wrapPlaca">
+        <input type="text" class="extra-input placa" id="extraPlaca" placeholder="ABC123" maxlength="6" oninput="onPlacaInput()" />
+      </div>
+    </div>
+  </div>
+  <div class="extra-row" style="margin-top:8px">
+    <div class="extra-field">
+      <label class="extra-label">Destino</label>
+      <div class="extra-input-wrap" id="wrapDestino">
+        <input type="text" class="extra-input" id="extraDestino" placeholder="Ciudad de destino" oninput="onDestinoInput()" />
+      </div>
+    </div>
+  </div>
+  <button class="anticipo-toggle" id="btnAnticipo" onclick="toggleAnticipo()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+      <line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/>
+    </svg>
+    <span id="btnAnticipoText">Agregar anticipo</span>
+  </button>
+  <div class="anticipo-row" id="anticipoRow">
+    <div class="extra-field">
+      <label class="extra-label">Anticipo</label>
+      <div class="extra-input-wrap">
+        <span class="extra-prefix">$</span>
+        <input type="text" class="extra-input" id="extraAnticipo" placeholder="0" oninput="onAnticipoInput()" />
+      </div>
+    </div>
+  </div><!-- /anticipo-row -->
+</div><!-- /extra-block -->
+
+  <button class="pdf-btn" id="pdfBtn" onclick="generarPDF('ambos')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="12" y1="18" x2="12" y2="12"/>
+      <line x1="9" y1="15" x2="15" y2="15"/>
+    </svg>
+    Imprimir / PDF Completo
+  </button>
+</div><!-- /card -->
+
+<!-- ── Modal de validación ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-title">Faltan datos obligatorios</div>
+    <div class="modal-text" id="modalText"></div>
+    <button class="modal-btn" onclick="cerrarModalFaltantes()">Entendido</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* ── Logo embebido (base64) ──
+   IMPORTANTE: reemplaza la línea de abajo por tu línea original:  const LOGO_B64 = '/9j/4AAQ...';  */
+const LOGO_B64 = 'PEGA_AQUI_TU_LOGO_BASE64';
+const LOGO_MIME = 'image/jpeg';
+const HAS_LOGO = !!LOGO_B64 && !LOGO_B64.startsWith('PEGA_AQUI');
+
+const TARIFAS = {
+  "ABREGO": 653, "AGUACHICA": 374, "AGUACHICA FRESCALECHE FACTORES Y MERCADEO": 800000,
+  "BARBOSA": 383, "BARICHARA": 571, "BARRANCABERMEJA": 366, "BUCARAMANGA": 200,
+  "CAPITANEJO": 686, "CARCASI": 800, "CATAGALLO": 904, "CHARALA": 560,
+  "CIMITARRA": 980, "CUCUTA": 405, "CURUMANI": 904, "EL CARMEN CHUCURI": 1020,
+  "EL PLAYON": 364, "EL ZULIA": 463, "FLORIDABLANCA": 245, "GAMARRA": 735,
+  "GIRON": 245, "GUACA": 613, "LA ESPERANZA NRTE SANTANDER": 369, "LANDAZURI": 956,
+  "LEBRIJA": 392, "LOS PATIOS": 417, "MALAGA": 600, "MOGOTES": 587,
+  "MONIQUIRA": 537, "OCAÑA": 417, "OIBA": 430, "PAILITAS": 904, "PAMPLONA": 400,
+  "PELAYA": 904, "PUENTE NACIONAL": 537, "PUERTO ARAUJO": 980, "PUERTO PARRA": 980,
+  "PUERTO SANTANDER": 973, "PUERTO WILCHES": 769, "RIO DE ORO": 445, "RIONEGRO": 404,
+  "SABANA DE TORRES": 700, "SAN ALBERTO": 352, "SAN GIL": 343, "SAN MARTIN": 400,
+  "SAN PABLO SUR DE BOLIVAR": 864, "SAN VICENTE CHUCURI": 1020,
+  "SANTA ROSA SUR BOLIVAR": 914, "SIMACOTA": 1063, "SIMITI": 975,
+  "SOCORRO": 366, "SUAITA": 426, "TIBU": 1128, "VALLE DE SAN JOSE": 396,
+  "VELEZ": 735, "VILLA DEL ROSARIO": 417, "VILLANUEVA": 463, "YONDO": 579, "ZAPATOCA": 460, "PIEDECUESTA": 245
+};
+const ALL_CITIES = Object.keys(TARIFAS).sort();
+let rowCount = 0;
+const ddActive = {};
+
+function fmtInt(n) {
+  return new Intl.NumberFormat('es-CO', {minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
+}
+
+function addRow() {
+  rowCount++;
+  const id = rowCount;
+  const container = document.createElement('div');
+  container.id = 'container-' + id;
+  container.innerHTML = `
+    <div class="city-row" id="row-${id}">
+      <div class="city-wrap">
+        <input type="text" class="city-input" id="city-${id}" placeholder="Ciudad..." autocomplete="off"
+          oninput="onCityInput(${id})" onkeydown="onCityKey(event,${id})" onfocus="showDropdown(${id})" onblur="hideDropdown(${id})" />
+        <div class="dropdown" id="dd-${id}" style="display:none"></div>
+      </div>
+      <div class="kilo-wrap">
+        <input type="text" class="kilo-input" id="kg-${id}" placeholder="0" oninput="onKgInput(${id})" />
+        <span class="kilo-unit">kg</span>
+      </div>
+      <button class="remove-btn" onclick="removeRow(${id})" title="Eliminar">&times;</button>
+    </div>
+    <div class="row-result-card" id="res-${id}">
+      <span class="row-result-formula" id="res-formula-${id}"></span>
+      <span class="row-result-total" id="res-total-${id}"></span>
+    </div>`;
+  document.getElementById('cityRows').appendChild(container);
+  document.getElementById('city-' + id).focus();
+}
+
+function removeRow(id) {
+  const el = document.getElementById('container-' + id);
+  if (el) el.remove();
+  recalc();
+}
+function onCityInput(id) { showDropdown(id, document.getElementById('city-'+id).value.toUpperCase()); recalc(); }
+function showDropdown(id, filter) {
+  const dd = document.getElementById('dd-'+id);
+  const q = filter !== undefined ? filter : document.getElementById('city-'+id).value.toUpperCase();
+  const matches = q.length===0 ? ALL_CITIES : ALL_CITIES.filter(c=>c.includes(q));
+  if (!matches.length) { dd.style.display='none'; return; }
+  dd.innerHTML = matches.map((c,i) =>
+    `<div class="dropdown-item" onmousedown="selectCity(${id},'${c.replace(/'/g,"\\'")}')">
+      ${c} <span>$ ${fmtInt(TARIFAS[c])}/kg${TEMP_CITIES.has(c) ? ' · temporal' : ''}</span></div>`).join('');
+  dd.style.display='block'; ddActive[id]=-1;
+}
+function hideDropdown(id) { setTimeout(()=>{ const d=document.getElementById('dd-'+id); if(d) d.style.display='none'; },200); }
+function onCityKey(e,id) {
+  const dd=document.getElementById('dd-'+id);
+  const items=dd?dd.querySelectorAll('.dropdown-item'):[];
+  if(e.key==='ArrowDown' && (!dd || dd.style.display==='none')){
+    showDropdown(id); e.preventDefault(); return;
+  }
+  if(e.key==='Tab'){
+    if(dd&&dd.style.display!=='none'&&items.length>0){
+      e.preventDefault();
+      const ai=(ddActive[id]>=0)?ddActive[id]:0;
+      const city=(items[ai]||items[0]).textContent.trim().split('$')[0].trim();
+      selectCity(id,city); document.getElementById('kg-'+id).focus();
+    } return;
+  }
+  if(!dd||dd.style.display==='none'||!items.length) return;
+  if(e.key==='ArrowDown'){
+    ddActive[id]=Math.min((ddActive[id]??-1)+1,items.length-1);
+    items.forEach((el,i)=>el.classList.toggle('active',i===ddActive[id]));
+    items[ddActive[id]]?.scrollIntoView({block:'nearest'});
+    e.preventDefault();
+  } else if(e.key==='ArrowUp'){
+    ddActive[id]=Math.max((ddActive[id]??0)-1,0);
+    items.forEach((el,i)=>el.classList.toggle('active',i===ddActive[id]));
+    items[ddActive[id]]?.scrollIntoView({block:'nearest'});
+    e.preventDefault();
+  } else if(e.key==='Enter'){
+    const ai=(ddActive[id]>=0)?ddActive[id]:0;
+    const a=items[ai]||dd.querySelector('.dropdown-item');
+    if(a)a.dispatchEvent(new MouseEvent('mousedown'));
+    e.preventDefault();
+  } else if(e.key==='Escape'){dd.style.display='none';}
+}
+function selectCity(id,city){
+  const el=document.getElementById('city-'+id);
+  el.value=city; el.classList.remove('no-match'); el.classList.add('matched');
+  const dd=document.getElementById('dd-'+id); if(dd) dd.style.display='none';
+  recalc();
+}
+function onKgInput(id){document.getElementById('kg-'+id).value=document.getElementById('kg-'+id).value.replace(/[^\d.]/g,'');recalc();}
+
+function recalc(){
+  let totalKg=0,totalPagar=0;
+  document.querySelectorAll('.city-row').forEach(row=>{
+    const id=row.id.replace('row-','');
+    const cityEl=document.getElementById('city-'+id);
+    const kgEl=document.getElementById('kg-'+id);
+    const resCard=document.getElementById('res-'+id);
+    const resFormula=document.getElementById('res-formula-'+id);
+    const resTotal=document.getElementById('res-total-'+id);
+    if(!cityEl||!kgEl) return;
+    const city=cityEl.value.toUpperCase().trim();
+    const kg=parseFloat(kgEl.value)||0;
+    const tarifa=TARIFAS[city]||null;
+    if(tarifa&&kg>0){
+      const sub=tarifa*kg; totalKg+=kg; totalPagar+=sub;
+      resFormula.textContent=`${fmtInt(kg)} kg x $ ${fmtInt(tarifa)}`;
+      resTotal.textContent=`$ ${fmtInt(sub)}`;
+      resCard.classList.add('visible');
+      cityEl.classList.remove('no-match'); cityEl.classList.add('matched');
+    } else {
+      resCard.classList.remove('visible');
+      if(city&&!tarifa&&city.length>2){cityEl.classList.remove('matched');cityEl.classList.add('no-match');}
+      else{cityEl.classList.remove('matched','no-match');}
+    }
+  });
+  document.getElementById('totalKilos').textContent=fmtInt(totalKg)+' kg';
+  document.getElementById('totalPagar').textContent='$ '+fmtInt(totalPagar);
+  updatePdfBtn();
+}
+
+function getFechaHora(){
+  const now=new Date();
+  const dias=['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fecha=`${dias[now.getDay()].charAt(0).toUpperCase()+dias[now.getDay()].slice(1)}, ${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  const hora=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  return {fecha,hora};
+}
+
+/* ══════════════════════════════════════
+   TARIFAS CUPOS (3-4.5 ton)
+   Precio fijo por cupo según ciudad
+══════════════════════════════════════ */
+const TARIFAS_CUPO = {};
+(function(){
+  const cupos = {
+    "BUCARAMANGA":400000,
+    "BARRANCABERMEJA":950000,
+    "BOGOTA":1250000,
+    "MEDELLIN":1250000,
+    "CUCUTA":1100000,
+    "OCAÑA":1150000,
+    "PUERTO SANTANDER":1300000
+  };
+  Object.assign(TARIFAS_CUPO, cupos);
+})();
+
+let cupoCount = 0;
+
+/* ── Remesas: separar por espacio, coma, punto y coma o barra vertical ── */
+function parseRemesas(v) {
+  return (v || '').split(/[\s,;|]+/).map(s => s.trim()).filter(Boolean);
+}
+function onRemesasInput(id, e) {
+  const el = document.getElementById('cupo-rem-' + id);
+  if (!el) return;
+  // solo números (se conservan los separadores para poder escribir varias remesas)
+  const soloNum = el.value.replace(/[^0-9\s,;|]/g, '');
+  if (soloNum !== el.value) {
+    const pos = el.selectionStart - (el.value.length - soloNum.length);
+    el.value = soloNum;
+    el.setSelectionRange(pos, pos);
+  }
+  if (el.selectionStart !== el.value.length) return;   // solo si se escribe al final
+  const tokens = parseRemesas(el.value);
+  const borrando = !!(e && e.inputType && e.inputType.startsWith('delete'));
+  const terminaSep = /[\s,;|]$/.test(el.value);
+  let out = tokens.join(' | ');
+  if (terminaSep && tokens.length) {
+    if (!borrando) out += ' | ';
+    else if (el.value === out + ' | ') out = el.value;   // al borrar, no recrear el separador de golpe
+  }
+  if (out !== el.value) el.value = out;
+}
+function normalizarRemesas(id) {
+  const el = document.getElementById('cupo-rem-' + id);
+  if (el) el.value = parseRemesas(el.value).join(' | ');
+}
+
+function addCupoRow() {
+  cupoCount++;
+  const id = cupoCount;
+  const container = document.createElement('div');
+  container.id = 'cupo-container-' + id;
+
+  const options = Object.keys(TARIFAS_CUPO).map(c =>
+    `<option value="${c}">${c} — $ ${fmtInt(TARIFAS_CUPO[c])}/cupo</option>`
+  ).join('');
+
+  container.innerHTML = `
+    <div class="cupo-row" id="cupo-row-${id}">
+      <select class="cupo-select" id="cupo-city-${id}" onchange="recalcCupoRow(${id})">
+        <option value="">Seleccionar ciudad…</option>
+        ${options}
+      </select>
+      <div class="cupo-qty-wrap">
+        <input type="text" class="cupo-qty-input" id="cupo-qty-${id}" placeholder="1" oninput="recalcCupoRow(${id})" />
+        <span class="cupo-qty-unit">cupos</span>
+      </div>
+      <button class="remove-btn" onclick="removeCupoRow(${id})" title="Eliminar">&times;</button>
+    </div>
+    <div class="remesas-wrap" id="cupo-rem-wrap-${id}">
+      <label class="extra-label">Remesas de este cupo</label>
+      <div class="extra-input-wrap">
+        <input type="text" class="extra-input" id="cupo-rem-${id}" placeholder="Ej: 123456 | 123457 | 123458" autocomplete="off" oninput="onRemesasInput(${id}, event)" onchange="normalizarRemesas(${id})" />
+      </div>
+    </div>
+    <div class="cupo-result-card" id="cupo-res-${id}">
+      <span class="cupo-result-formula" id="cupo-res-formula-${id}"></span>
+      <span class="cupo-result-total" id="cupo-res-total-${id}"></span>
+    </div>`;
+  document.getElementById('cupoRows').appendChild(container);
+}
+
+function removeCupoRow(id) {
+  const el = document.getElementById('cupo-container-' + id);
+  if (el) el.remove();
+  recalcCupos();
+  updatePdfBtn();
+}
+
+function recalcCupoRow(id) {
+  const wrap = document.getElementById('cupo-rem-wrap-' + id);
+  if (wrap) wrap.classList.toggle('visible', !!document.getElementById('cupo-city-' + id)?.value);
+  recalcCupos();
+  updatePdfBtn();
+}
+
+function recalcCupos() {
+  let totalCupos = 0, totalPagar = 0;
+  document.querySelectorAll('[id^="cupo-row-"]').forEach(row => {
+    const id = row.id.replace('cupo-row-', '');
+    const city = document.getElementById('cupo-city-' + id)?.value || '';
+    const qty = parseInt(document.getElementById('cupo-qty-' + id)?.value) || 0;
+    const tarifa = TARIFAS_CUPO[city] || null;
+    const res = document.getElementById('cupo-res-' + id);
+    const formula = document.getElementById('cupo-res-formula-' + id);
+    const total = document.getElementById('cupo-res-total-' + id);
+    if (tarifa && qty > 0) {
+      const sub = tarifa * qty;
+      totalCupos += qty;
+      totalPagar += sub;
+      formula.textContent = `${qty} cupo${qty > 1 ? 's' : ''} x $ ${fmtInt(tarifa)}`;
+      total.textContent = `$ ${fmtInt(sub)}`;
+      res.classList.add('visible');
+    } else {
+      res && res.classList.remove('visible');
+    }
+  });
+  document.getElementById('totalCupos').textContent = totalCupos ? `${totalCupos} cupo${totalCupos > 1 ? 's' : ''}` : '0 cupos';
+  document.getElementById('totalCuposPagar').textContent = '$ ' + fmtInt(totalPagar);
+}
+
+function hasKilosData() {
+  let found = false;
+  document.querySelectorAll('.city-row').forEach(row => {
+    const id = row.id.replace('row-', '');
+    const city = (document.getElementById('city-' + id)?.value || '').toUpperCase().trim();
+    const kg = parseFloat(document.getElementById('kg-' + id)?.value) || 0;
+    if (TARIFAS[city] && kg > 0) found = true;
+  });
+  return found;
+}
+
+function hasCuposData() {
+  let found = false;
+  document.querySelectorAll('[id^="cupo-row-"]').forEach(row => {
+    const id = row.id.replace('cupo-row-', '');
+    const city = document.getElementById('cupo-city-' + id)?.value || '';
+    const qty = parseInt(document.getElementById('cupo-qty-' + id)?.value) || 0;
+    if (TARIFAS_CUPO[city] && qty > 0) found = true;
+  });
+  return found;
+}
+
+function updatePdfBtn() {
+  const btn = document.getElementById('pdfBtn');
+  const btnK = document.getElementById('pdfBtnKilos');
+  const btnC = document.getElementById('pdfBtnCupos');
+  const kilos = hasKilosData();
+  const cupos = hasCuposData();
+  if (btn)  btn.disabled  = !kilos && !cupos;
+  if (btnK) btnK.disabled = !kilos;
+  if (btnC) btnC.disabled = !cupos;
+}
+
+/* ── Validación de "Datos adicionales" antes de generar PDF ── */
+function validarDatosAdicionales() {
+  const extras = getExtraDatos();
+  const faltantes = [];
+  if (!extras.placa || extras.placa.length < 6) faltantes.push({ campo: 'Placa del vehículo', id: 'wrapPlaca' });
+  if (!extras.destino) faltantes.push({ campo: 'Destino', id: 'wrapDestino' });
+  if (!extras.flete || extras.flete <= 0) faltantes.push({ campo: 'Flete', id: 'wrapFlete' });
+  return faltantes;
+}
+
+function mostrarModalFaltantes(faltantes) {
+  const text = document.getElementById('modalText');
+  text.innerHTML = 'Para generar el PDF debes completar estos campos en <b>Datos adicionales</b>:<ul>' +
+    faltantes.map(f => `<li>${f.campo}</li>`).join('') + '</ul>';
+  document.querySelectorAll('.extra-input-wrap').forEach(w => w.classList.remove('error'));
+  faltantes.forEach(f => {
+    const wrap = document.getElementById(f.id);
+    if (wrap) wrap.classList.add('error');
+  });
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function cerrarModalFaltantes() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+/* ══════════════════════════════════════
+   PALETA EXPRESO ANDINO
+   Azul  #1565C0 | Rojo #C62828 | Verde #2E7D32
+══════════════════════════════════════ */
+function generarPDF(modo){
+  // ── Validación obligatoria de datos adicionales ──
+  const faltantes = validarDatosAdicionales();
+  if (faltantes.length > 0) {
+    mostrarModalFaltantes(faltantes);
+    return;
+  }
+
+  const _tieneKilos = hasKilosData();
+  const _tieneCupos = hasCuposData();
+  const tieneKilos = (modo === 'cupos') ? false : _tieneKilos;
+  const tieneCupos = (modo === 'kilos') ? false : _tieneCupos;
+
+  if (!tieneKilos && !tieneCupos) {
+    showToast('Agrega al menos una ciudad con datos validos','#C62828');
+    return;
+  }
+
+  // Recolectar filas de kilos
+  const filasKilos = [];
+  document.querySelectorAll('.city-row').forEach(row => {
+    const id = row.id.replace('row-', '');
+    const city = (document.getElementById('city-' + id)?.value || '').toUpperCase().trim();
+    const kg = parseFloat(document.getElementById('kg-' + id)?.value) || 0;
+    const tarifa = TARIFAS[city] || null;
+    if (tarifa && kg > 0) filasKilos.push({ city, kg, tarifa, subtotal: tarifa * kg });
+  });
+
+  // Recolectar filas de cupos (con sus remesas)
+  const filasCupos = [];
+  document.querySelectorAll('[id^="cupo-row-"]').forEach(row => {
+    const id = row.id.replace('cupo-row-', '');
+    const city = document.getElementById('cupo-city-' + id)?.value || '';
+    const qty = parseInt(document.getElementById('cupo-qty-' + id)?.value) || 0;
+    const tarifa = TARIFAS_CUPO[city] || null;
+    const remesas = parseRemesas(document.getElementById('cupo-rem-' + id)?.value);
+    if (tarifa && qty > 0) filasCupos.push({ city, qty, tarifa, subtotal: tarifa * qty, remesas });
+  });
+
+  const totalKg = filasKilos.reduce((a, f) => a + f.kg, 0);
+  const totalKilosPagar = filasKilos.reduce((a, f) => a + f.subtotal, 0);
+  const totalCupos = filasCupos.reduce((a, f) => a + f.qty, 0);
+  const totalCuposPagar = filasCupos.reduce((a, f) => a + f.subtotal, 0);
+  const { fecha, hora } = getFechaHora();
+  const extras = getExtraDatos();
+
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297, ML = 16, MR = W - ML;
+  const PAGE_BOTTOM = H - 20; // margen de seguridad para no invadir el pie de página
+  let Y = 0;
+
+  /* ── Salto de página seguro: evita que cualquier bloque quede cortado ── */
+  function checkPageBreak(needed) {
+    if (Y + needed > PAGE_BOTTOM) {
+      const pagActual = doc.internal.getNumberOfPages();
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(198, 40, 40);
+      doc.text(`Contin\u00faa en la p\u00e1gina ${pagActual + 1} >>`, MR, H - 17, { align: 'right' });
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, W, H, 'F');
+      doc.setFillColor(21, 101, 192);
+      doc.rect(0, 0, W, 18, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(255, 255, 255);
+      doc.text('TARIFAS REEXPEDIDORA BUCARAMANGA (continuación)', W / 2, 11, { align: 'center' });
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(107, 117, 160);
+      doc.text(`Continuaci\u00f3n de la p\u00e1gina ${pagActual}`, ML, 25);
+      Y = 34;
+    }
+  }
+
+  /* Fondo blanco */
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, W, H, 'F');
+
+  /* Logo marca de agua (muy tenue, para no interferir con el texto) */
+  if (HAS_LOGO) {
+    try {
+      const lW = 70, lH = 70;
+      const lX = (W - lW) / 2, lY = (H - lH) / 2 - 10;
+      doc.saveGraphicsState();
+      doc.setGState(new doc.GState({ opacity: 0.025 }));
+      doc.addImage(LOGO_B64, LOGO_MIME, lX, lY, lW, lH);
+      doc.restoreGraphicsState();
+    } catch(e) {}
+  }
+
+  /* Franja superior azul */
+  doc.setFillColor(21, 101, 192);
+  doc.rect(0, 0, W, 44, 'F');
+  doc.setFillColor(198, 40, 40);
+  doc.rect(0, 44, W, 3, 'F');
+  doc.setFillColor(46, 125, 50);
+  doc.rect(0, 47, W, 2, 'F');
+
+  /* Logo cabecera */
+  if (HAS_LOGO) { try { doc.addImage(LOGO_B64, LOGO_MIME, ML, 5, 28, 28); } catch(e) {} }
+
+  /* Textos cabecera */
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TARIFAS REEXPEDIDORA BUCARAMANGA', W / 2, 18, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.setTextColor(180, 210, 255);
+  doc.text('Oscar Perez  \u2014  Valor por kilo', W / 2, 26, { align: 'center' });
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8);
+  doc.setTextColor(200, 225, 255);
+  doc.text(`Generado el ${fecha}   \u00b7   ${hora}`, W / 2, 34, { align: 'center' });
+
+  Y = 60;
+
+  /* ══ SECCIÓN KILOS (solo si tiene datos) ══ */
+  if (tieneKilos) {
+    checkPageBreak(30);
+
+    /* Subtítulo sección */
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 117, 160);
+    doc.text('CIUDAD Y KILOS', ML, Y);
+    Y += 7;
+
+    /* Cabecera tabla */
+    doc.setFillColor(13, 71, 161);
+    doc.roundedRect(ML, Y - 5, MR - ML, 10, 2, 2, 'F');
+    const COL = { city: ML + 3, kg: 126, tarifa: 156, subtotal: MR - 2 };
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(200, 225, 255);
+    doc.text('CIUDAD',       COL.city,    Y, { baseline: 'middle' });
+    doc.text('KG',           COL.kg,      Y, { baseline: 'middle', align: 'right' });
+    doc.text('TARIFA / KG',  COL.tarifa,  Y, { baseline: 'middle', align: 'right' });
+    doc.text('SUBTOTAL',     COL.subtotal,Y, { baseline: 'middle', align: 'right' });
+    Y += 13;
+
+    filasKilos.forEach((f, i) => {
+      const rowH = 9;
+      checkPageBreak(rowH + 2);
+      if (i % 2 === 0) { doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F'); }
+      const accent = [[21,101,192],[198,40,40],[46,125,50]][i % 3];
+      doc.setFillColor(...accent);
+      doc.rect(ML, Y - 5, 3, rowH, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(13, 30, 80);
+      doc.text(f.city, COL.city + 2, Y, { baseline: 'middle' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(50, 80, 140);
+      doc.text(`${fmtInt(f.kg)} kg`,       COL.kg,       Y, { baseline: 'middle', align: 'right' });
+      doc.text(`$ ${fmtInt(f.tarifa)}`,    COL.tarifa,   Y, { baseline: 'middle', align: 'right' });
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(21, 101, 192);
+      doc.text(`$ ${fmtInt(f.subtotal)}`,  COL.subtotal, Y, { baseline: 'middle', align: 'right' });
+      Y += rowH + 1;
+    });
+
+    checkPageBreak(30);
+    Y += 4;
+    const segW = (MR - ML) / 3;
+    doc.setFillColor(21,101,192); doc.rect(ML,           Y, segW, 2, 'F');
+    doc.setFillColor(198,40,40);  doc.rect(ML + segW,    Y, segW, 2, 'F');
+    doc.setFillColor(46,125,50);  doc.rect(ML + segW*2,  Y, segW, 2, 'F');
+    Y += 8;
+
+    let rowH = 10;
+    doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
+    doc.setFillColor(21,101,192);    doc.rect(ML, Y - 5, 3, rowH, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
+    doc.text('TOTAL KILOS', COL.city + 2, Y, { baseline: 'middle' });
+    doc.setTextColor(21,101,192);
+    doc.text(`${fmtInt(totalKg)} kg`, COL.subtotal, Y, { baseline: 'middle', align: 'right' });
+    Y += rowH + 1;
+
+    checkPageBreak(12);
+    doc.setFillColor(210,225,250); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
+    doc.setFillColor(21,101,192);  doc.rect(ML, Y - 5, 3, rowH, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
+    doc.text('TOTAL A PAGAR', COL.city + 2, Y, { baseline: 'middle' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(21,101,192);
+    doc.text(`$ ${fmtInt(totalKilosPagar)}`, COL.subtotal, Y, { baseline: 'middle', align: 'right' });
+    Y += rowH + 8;
+  }
+
+  /* ══ SECCIÓN CUPOS (solo si tiene datos) ══ */
+  if (tieneCupos) {
+    checkPageBreak(30);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 117, 160);
+    doc.text('CUPOS 3 TON \u2013 4.5 TON', ML, Y);
+    Y += 7;
+
+    /* Cabecera tabla cupos */
+    doc.setFillColor(13, 71, 161);
+    doc.roundedRect(ML, Y - 5, MR - ML, 10, 2, 2, 'F');
+    const COLC = { city: ML + 3, qty: 110, tarifa: 156, subtotal: MR - 2 };
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(200, 225, 255);
+    doc.text('CIUDAD',        COLC.city,    Y, { baseline: 'middle' });
+    doc.text('CANTIDAD',      COLC.qty,     Y, { baseline: 'middle', align: 'right' });
+    doc.text('PRECIO / CUPO', COLC.tarifa,  Y, { baseline: 'middle', align: 'right' });
+    doc.text('SUBTOTAL',      COLC.subtotal,Y, { baseline: 'middle', align: 'right' });
+    Y += 13;
+
+    /* ── Remesas: acomodo en líneas, separadas por una línea vertical ── */
+    const SEP = 6;   // ancho del separador (mm)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    const REM_X0 = COLC.city + 2 + doc.getTextWidth('Remesas (cont.):') + 2;
+    const layoutRemesas = (items) => {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+      const maxW = (MR - 2) - REM_X0;
+      const lines = []; let cur = [], w = 0;
+      items.forEach(t => {
+        const iw = doc.getTextWidth(t);
+        const add = (cur.length ? SEP : 0) + iw;
+        if (cur.length && w + add > maxW) { lines.push(cur); cur = [{ t, w: iw }]; w = iw; }
+        else { cur.push({ t, w: iw }); w += add; }
+      });
+      if (cur.length) lines.push(cur);
+      return lines;
+    };
+
+    filasCupos.forEach((f, i) => {
+      const rowH = 9;
+      const lineas = f.remesas.length ? layoutRemesas(f.remesas) : [];
+      checkPageBreak(rowH + 2 + (lineas.length ? 7 : 0));
+      if (i % 2 === 0) { doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F'); }
+      const accent = [[21,101,192],[198,40,40],[46,125,50]][i % 3];
+      doc.setFillColor(...accent);
+      doc.rect(ML, Y - 5, 3, rowH, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(13, 30, 80);
+      doc.text(f.city, COLC.city + 2, Y, { baseline: 'middle' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(50, 80, 140);
+      doc.text(`${fmtInt(f.qty)} cupo${f.qty > 1 ? 's' : ''}`, COLC.qty,      Y, { baseline: 'middle', align: 'right' });
+      doc.text(`$ ${fmtInt(f.tarifa)}`,                          COLC.tarifa,  Y, { baseline: 'middle', align: 'right' });
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(21, 101, 192);
+      doc.text(`$ ${fmtInt(f.subtotal)}`,                        COLC.subtotal,Y, { baseline: 'middle', align: 'right' });
+
+      if (lineas.length) {
+        let ry = Y + 8.5;
+        let primera = true, cont = false;
+        lineas.forEach(ln => {
+          if (ry > PAGE_BOTTOM) {            // las remesas siguen en la página siguiente
+            Y = PAGE_BOTTOM + 1; checkPageBreak(1);
+            ry = Y; primera = true; cont = true;
+          }
+          if (primera) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(13, 30, 80);
+            doc.text(cont ? 'Remesas (cont.):' : 'Remesas:', COLC.city + 2, ry);
+            primera = false;
+          }
+          let x = REM_X0;
+          ln.forEach((o, j) => {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(50, 80, 140);
+            doc.text(o.t, x, ry);
+            x += o.w;
+            if (j < ln.length - 1) {
+              doc.setDrawColor(21, 101, 192); doc.setLineWidth(0.3);
+              doc.line(x + SEP / 2, ry - 3, x + SEP / 2, ry + 1.2);   // línea vertical separadora
+              x += SEP;
+            }
+          });
+          ry += 5;
+        });
+        Y = ry + 3;
+      } else {
+        Y += rowH + 1;
+      }
+    });
+
+    checkPageBreak(30);
+    Y += 4;
+    const segW = (MR - ML) / 3;
+    doc.setFillColor(21,101,192); doc.rect(ML,           Y, segW, 2, 'F');
+    doc.setFillColor(198,40,40);  doc.rect(ML + segW,    Y, segW, 2, 'F');
+    doc.setFillColor(46,125,50);  doc.rect(ML + segW*2,  Y, segW, 2, 'F');
+    Y += 8;
+
+    let rowH = 10;
+    doc.setFillColor(232, 240, 254); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
+    doc.setFillColor(21,101,192);    doc.rect(ML, Y - 5, 3, rowH, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
+    doc.text('TOTAL CUPOS', COLC.city + 2, Y, { baseline: 'middle' });
+    doc.setTextColor(21,101,192);
+    doc.text(`${fmtInt(totalCupos)} cupo${totalCupos > 1 ? 's' : ''}`, COLC.subtotal, Y, { baseline: 'middle', align: 'right' });
+    Y += rowH + 1;
+
+    checkPageBreak(12);
+    doc.setFillColor(210,225,250); doc.rect(ML, Y - 5, MR - ML, rowH, 'F');
+    doc.setFillColor(21,101,192);  doc.rect(ML, Y - 5, 3, rowH, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(13,30,80);
+    doc.text('TOTAL CUPOS A PAGAR', COLC.city + 2, Y, { baseline: 'middle' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(21,101,192);
+    doc.text(`$ ${fmtInt(totalCuposPagar)}`, COLC.subtotal, Y, { baseline: 'middle', align: 'right' });
+    Y += rowH + 8;
+  }
+
+  /* ══ GRAN TOTAL (solo si ambas secciones tienen datos) ══ */
+  if (tieneKilos && tieneCupos) {
+    checkPageBreak(19);
+    const grandTotal = totalKilosPagar + totalCuposPagar;
+    doc.setFillColor(21, 101, 192);
+    doc.roundedRect(ML, Y - 5, MR - ML, 14, 3, 3, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(180, 210, 255);
+    doc.text('GRAN TOTAL (KILOS + CUPOS)', ML + 5, Y + 2, { baseline: 'middle' });
+    doc.setFontSize(14); doc.setTextColor(255, 255, 255);
+    doc.text(`$ ${fmtInt(grandTotal)}`, MR - 2, Y + 2, { baseline: 'middle', align: 'right' });
+    Y += 20;
+  }
+
+  /* ══ DATOS ADICIONALES (flete / placa / anticipo / destino) ══ */
+  const tieneExtras = extras.flete > 0 || extras.placa || extras.anticipo > 0 || extras.destino;
+  if (tieneExtras) {
+    let lineas = 0;
+    if (extras.destino) lineas++;
+    if (extras.placa) lineas++;
+    if (extras.flete > 0) lineas++;
+    if (extras.anticipo > 0) lineas++;
+    const bloqueAlto = 15 + lineas * 8;
+    checkPageBreak(bloqueAlto);
+
+    /* Fondo sólido para que la marca de agua no se vea "por debajo" del texto */
+    doc.setFillColor(255, 255, 255);
+    doc.rect(ML - 4, Y - 4, (MR - ML) + 8, bloqueAlto + 4, 'F');
+
+    const segW2 = (MR - ML) / 3;
+    doc.setFillColor(21,101,192);  doc.rect(ML,           Y, segW2, 1.5, 'F');
+    doc.setFillColor(198,40,40);   doc.rect(ML + segW2,   Y, segW2, 1.5, 'F');
+    doc.setFillColor(46,125,50);   doc.rect(ML + segW2*2, Y, segW2, 1.5, 'F');
+    Y += 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(107, 117, 160);
+    doc.text('DATOS ADICIONALES', W / 2, Y, { align: 'center' });
+    Y += 7;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12.6);
+    if (extras.destino) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Destino:', ML + 4, Y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 80, 140);
+      doc.text(extras.destino, ML + 36, Y);
+      Y += 8;
+    }
+    if (extras.placa) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Placa:', ML + 4, Y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(50, 80, 140);
+      doc.text(extras.placa, ML + 36, Y);
+      Y += 8;
+    }
+    if (extras.flete > 0) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Flete:', ML + 4, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(21, 101, 192);
+      doc.text(`$ ${fmtInt(extras.flete)}`, ML + 36, Y);
+      Y += 8;
+    }
+    if (extras.anticipo > 0) {
+      doc.setTextColor(13, 30, 80);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Anticipo:', ML + 4, Y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(198, 40, 40);
+      doc.text(`$ ${fmtInt(extras.anticipo)}`, ML + 36, Y);
+      Y += 8;
+    }
+    Y += 4;
+  }
+
+  /* ── Pie de página en TODAS las páginas generadas ── */
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFillColor(46, 125, 50);  doc.rect(0, H - 10, W, 10, 'F');
+    doc.setFillColor(198, 40, 40);  doc.rect(0, H - 13, W, 3, 'F');
+    doc.setFillColor(21, 101, 192); doc.rect(0, H - 15, W, 2, 'F');
+    doc.setFont('helvetica','italic'); doc.setFontSize(7.5); doc.setTextColor(200, 230, 200);
+    doc.text('Expreso Andino de Carga S.A.S.  \u2014  Documento generado automaticamente', W / 2, H - 4, { align: 'center' });
+    if (totalPages > 1) {
+      doc.setFontSize(7); doc.setTextColor(230,240,230);
+      doc.text(`Pagina ${p} de ${totalPages}`, MR, H - 4, { align: 'right' });
+    }
+  }
+
+  /* ── Nombre de archivo: PLACA + FECHA ── */
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const placaArchivo = (extras.placa || 'SIN-PLACA').replace(/\s+/g, '');
+  const nombre = `${placaArchivo}_${dd}-${mm}-${yyyy}.pdf`;
+  doc.save(nombre);
+  showToast('\u2713 PDF generado correctamente');
+}
+
+function showToast(msg,bg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=bg||'#1565C0';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* ── Datos adicionales: flete, placa, anticipo, destino ── */
+function fmtFlete(val) {
+  const digits = val.replace(/\D/g, '');
+  if (!digits) return '';
+  return new Intl.NumberFormat('es-CO', {minimumFractionDigits:0,maximumFractionDigits:0}).format(parseInt(digits, 10));
+}
+
+function onFleteInput() {
+  const el = document.getElementById('extraFlete');
+  const cursor = el.selectionStart;
+  const prev = el.value;
+  el.value = fmtFlete(prev);
+  const diff = el.value.length - prev.length;
+  el.setSelectionRange(cursor + diff, cursor + diff);
+  document.getElementById('wrapFlete').classList.remove('error');
+}
+
+function onAnticipoInput() {
+  const el = document.getElementById('extraAnticipo');
+  const cursor = el.selectionStart;
+  const prev = el.value;
+  el.value = fmtFlete(prev);
+  const diff = el.value.length - prev.length;
+  el.setSelectionRange(cursor + diff, cursor + diff);
+}
+
+function onPlacaInput() {
+  const el = document.getElementById('extraPlaca');
+  // Posiciones 1-3: solo letras. Posiciones 4-6: solo números.
+  let out = '';
+  for (const c of el.value.toUpperCase()) {
+    if (out.length < 3 && /[A-Z]/.test(c)) out += c;
+    else if (out.length >= 3 && out.length < 6 && /[0-9]/.test(c)) out += c;
+  }
+  el.value = out;
+  el.inputMode = out.length >= 3 ? 'numeric' : 'text';   // teclado numérico en el celular
+  document.getElementById('wrapPlaca').classList.remove('error');
+}
+
+function onDestinoInput() {
+  const el = document.getElementById('extraDestino');
+  el.value = el.value.charAt(0).toUpperCase() + el.value.slice(1);
+  document.getElementById('wrapDestino').classList.remove('error');
+}
+
+function toggleAnticipo() {
+  const row = document.getElementById('anticipoRow');
+  const btn = document.getElementById('btnAnticipo');
+  const visible = row.classList.toggle('visible');
+  btn.classList.toggle('open', visible);
+  document.getElementById('btnAnticipoText').textContent = visible ? 'Quitar anticipo' : 'Agregar anticipo';
+  if (!visible) document.getElementById('extraAnticipo').value = '';
+}
+
+function getExtraDatos() {
+  const fleteRaw = document.getElementById('extraFlete').value.replace(/\./g,'').replace(/,/g,'');
+  const flete = parseInt(fleteRaw.replace(/\D/g,'')) || 0;
+  const placa = document.getElementById('extraPlaca').value.trim();
+  const anticipoRaw = document.getElementById('extraAnticipo')?.value?.replace(/\./g,'').replace(/,/g,'') || '';
+  const anticipo = parseInt(anticipoRaw.replace(/\D/g,'')) || 0;
+  const anticipoVisible = document.getElementById('anticipoRow').classList.contains('visible');
+  const destino = document.getElementById('extraDestino').value.trim();
+  return { flete, placa, anticipo: anticipoVisible ? anticipo : 0, destino };
+}
+
+/* ── Ciudades temporales (solo en memoria; se pierden al recargar la página) ── */
+const TEMP_CITIES = new Set();
+
+function toggleTempCity() {
+  const f = document.getElementById('tempForm');
+  f.classList.toggle('visible');
+  if (f.classList.contains('visible')) document.getElementById('tempCityName').focus();
+}
+
+function guardarCiudadTemp() {
+  const nombre = document.getElementById('tempCityName').value.trim().toUpperCase().replace(/[<>"&\\]/g, '');
+  const valor = parseInt(document.getElementById('tempCityValor').value.replace(/\D/g, ''), 10) || 0;
+  if (!nombre || valor <= 0) { showToast('Ingresa ciudad y valor por kilo', '#C62828'); return; }
+  if (TARIFAS[nombre] && !TEMP_CITIES.has(nombre)) { showToast('Esa ciudad ya está en la lista', '#C62828'); return; }
+  TARIFAS[nombre] = valor;
+  if (!ALL_CITIES.includes(nombre)) ALL_CITIES.push(nombre);
+  ALL_CITIES.sort();
+  TEMP_CITIES.add(nombre);
+  document.getElementById('tempCityName').value = '';
+  document.getElementById('tempCityValor').value = '';
+  renderTempList();
+  recalc();
+  document.getElementById('tempForm').classList.remove('visible');   // se oculta; reaparece con el botón
+  showToast('\u2713 Ciudad temporal agregada');
+}
+
+function quitarCiudadTemp(nombre) {
+  delete TARIFAS[nombre];
+  const i = ALL_CITIES.indexOf(nombre);
+  if (i > -1) ALL_CITIES.splice(i, 1);
+  TEMP_CITIES.delete(nombre);
+  renderTempList();
+  recalc();
+}
+
+function renderTempList() {
+  document.getElementById('tempList').innerHTML = [...TEMP_CITIES].map(c =>
+    `<span class="temp-chip">${c} · $ ${fmtInt(TARIFAS[c])}/kg<button onclick="quitarCiudadTemp('${c.replace(/'/g,"\\'")}')" title="Quitar">&times;</button></span>`
+  ).join('');
+}
+
+addRow();
+addCupoRow();
+updatePdfBtn();
+</script>
+</body>
+</html>
